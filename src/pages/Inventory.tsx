@@ -29,7 +29,7 @@ const Pokeball = () => (
 const Inventory = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const { results, loading: searching, search, clear } = usePokemonSearch()
+  const { results, loading: searching, error, search, clear } = usePokemonSearch()
 
   const [query, setQuery] = useState('')
   const [inventory, setInventory] = useState<InventoryCard[]>([])
@@ -74,7 +74,7 @@ const Inventory = () => {
     if (!selectedCard || !user || !price) return
     setSaving(true)
 
-    const { data, error } = await supabase.from('cards').insert({
+    const { data, error: supabaseError } = await supabase.from('cards').insert({
       user_id: user.id,
       tcg_card_id: selectedCard.id,
       name: selectedCard.name,
@@ -85,7 +85,7 @@ const Inventory = () => {
       active: true,
     }).select().single()
 
-    if (!error && data) {
+    if (!supabaseError && data) {
       setInventory(prev => [data, ...prev])
       setSelectedCard(null)
     }
@@ -149,6 +149,9 @@ const Inventory = () => {
               {searching ? 'Buscando...' : 'Buscar'}
             </button>
           </form>
+          {error && (
+            <p className="text-sm text-[#e3350d] mt-2">{error}</p>
+          )}
         </section>
 
         {/* Search results */}
