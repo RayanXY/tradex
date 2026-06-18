@@ -5,14 +5,13 @@ interface User {
   id: string,
   name: string,
   phone: string,
-  whatsapp: string
 }
 
 interface AuthContextType {
   user: User | null,
   loading: boolean,
   login: (phone: string, password: string) => Promise<string | null>,
-  register: (name: string, phone: string, whatsapp: string, password: string) => Promise<string | null>,
+  register: (name: string, phone: string, password: string) => Promise<string | null>,
   logout: () => void
 }
 
@@ -40,18 +39,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (error || !data) return "Telefone ou senha inválidos."
 
-    const u: User = { id: data.id, name: data.name, phone: data.phone, whatsapp: data.whatsapp };
+    const u: User = { id: data.id, name: data.name, phone: data.phone };
     setUser(u);
     localStorage.setItem("tradex_user", JSON.stringify(u));
     return null
   }
 
-  const register = async (name: string, phone: string, whatsapp: string, password: string): Promise<string | null> => {
+  const register = async (name: string, phone: string, password: string): Promise<string | null> => {
     const { error } = await supabase
       .from('users')
-      .insert({ name, phone, whatsapp, password_hash: password });
+      .insert({ name, phone, password_hash: password })
 
-    if (error) return 'Telefone já cadastrado.';
+    if (error) return 'Telefone já cadastrado.'
     return null
   }
 

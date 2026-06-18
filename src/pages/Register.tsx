@@ -1,6 +1,6 @@
-import { useState  } from 'react'
-import type { SubmitEvent  } from 'react'
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import type { SubmitEvent } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 const Register = () => {
@@ -8,16 +8,15 @@ const Register = () => {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: SubmitEvent ) => {
+  const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const err = await register(name, phone, whatsapp, password);
+    const err = await register(name, phone, password)
     if (err) {
       setError(err);
       setLoading(false);
@@ -28,43 +27,65 @@ const Register = () => {
   }
 
   return (
-    <div>
-      <h1>Cadastro</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Nome / Apelido"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Telefone"
-          value={phone}
-          onChange={e => setPhone(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="WhatsApp (com DDD)"
-          value={whatsapp}
-          onChange={e => setWhatsapp(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Senha"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-        />
-        {error && <p>{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? 'Cadastrando...' : 'Cadastrar'}
-        </button>
-      </form>
-      <p>Já tem conta? <Link to="/login">Entrar</Link></p>
+    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" r="22" stroke="#e3350d" strokeWidth="2.5"/>
+            <path d="M2 24h44" stroke="#e3350d" strokeWidth="2.5"/>
+            <circle cx="24" cy="24" r="6" fill="#0f0f0f" stroke="#e3350d" strokeWidth="2.5"/>
+            <circle cx="24" cy="24" r="3" fill="#e3350d"/>
+            <path d="M2 24C2 12 12 2 24 2C36 2 46 12 46 24" fill="#e3350d" fillOpacity="0.15"/>
+          </svg>
+          <span className="mt-3 text-xl font-bold tracking-widest text-[#f0f0f0] uppercase">Tradex</span>
+        </div>
+
+        {/* Card */}
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8">
+          <h1 className="text-lg font-semibold text-[#f0f0f0] mb-6">Criar conta</h1>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <input
+              type="text"
+              placeholder="Nome / Apelido"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+            />
+            <input
+              type="text"
+              placeholder="Telefone"
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              required
+              className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+            />
+            <input
+              type="password"
+              placeholder="Senha"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+            />
+            {error && <p className="text-[#e3350d] text-sm">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-3 text-sm transition-colors mt-2"
+            >
+              {loading ? 'Cadastrando...' : 'Cadastrar'}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-sm text-[#888] mt-6">
+          Já tem conta?{' '}
+          <Link to="/login" className="text-[#f4d03f] hover:underline">Entrar</Link>
+        </p>
+      </div>
     </div>
   )
 }
