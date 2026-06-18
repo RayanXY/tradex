@@ -121,8 +121,8 @@ const Inventory = () => {
           <span className="text-sm text-[#888]">{user.name}</span>
           <button
             onClick={handleLogout}
-            className="text-sm text-[#888] hover:text-[#e3350d] transition-colors"
-          >
+            className="text-sm text-[#888] hover:text-[#e3350d] transition-colors cursor-pointer"
+          > 
             Sair
           </button>
         </div>
@@ -144,7 +144,7 @@ const Inventory = () => {
             <button
               type="submit"
               disabled={searching}
-              className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-3 text-sm transition-colors"
+              className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-3 text-sm transition-colors cursor-pointer"
             >
               {searching ? 'Buscando...' : 'Buscar'}
             </button>
@@ -163,7 +163,7 @@ const Inventory = () => {
                 <button
                   key={card.id}
                   onClick={() => handleSelectCard(card)}
-                  className="group flex flex-col items-center gap-1 p-2 rounded-lg border border-[#2a2a2a] hover:border-[#e3350d] bg-[#1a1a1a] transition-colors"
+                  className="group flex flex-col items-center gap-1 p-2 rounded-lg border border-[#2a2a2a] hover:border-[#e3350d] bg-[#1a1a1a] transition-colors cursor-pointer"
                 >
                   <img src={card.images.small} alt={card.name} className="w-full rounded" />
                   <span className="text-xs text-[#888] text-center group-hover:text-[#f0f0f0] transition-colors leading-tight">
@@ -207,13 +207,13 @@ const Inventory = () => {
                   <button
                     onClick={handleAddCard}
                     disabled={saving || !price}
-                    className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2 text-sm transition-colors"
+                    className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2 text-sm transition-colors cursor-pointer"
                   >
                     {saving ? 'Salvando...' : 'Adicionar'}
                   </button>
                   <button
                     onClick={() => setSelectedCard(null)}
-                    className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors"
+                    className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
@@ -249,7 +249,7 @@ const Inventory = () => {
                     </div>
                     <button
                       onClick={() => handleRemove(card.id)}
-                      className="text-xs text-[#555] hover:text-[#e3350d] transition-colors"
+                      className="text-xs text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
                     >
                       Remover
                     </button>
