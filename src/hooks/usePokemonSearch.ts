@@ -28,12 +28,12 @@ const usePokemonSearch = () => {
     setError(null);
     setResults([]);
 
-    const setNumberPattern = /^([a-zA-Z0-9]+)\s+(\d+)$/
-    const match = query.trim().match(setNumberPattern);
+    const setNumberPattern = /^([a-zA-Z0-9]+)[\s-](\d+)$/
+    const match = query.trim().match(setNumberPattern)
 
     const q = match
-      ? `set.ptcgoCode:${match[1]} number:${match[2]}`
-      : `name:"${query.trim()}"`;
+      ? `set.ptcgoCode:${match[1]} number:${parseInt(match[2])}`
+      : `name:"${query.trim()}"`
 
     try {
       const res = await fetch(`${BASE_URL}/cards?q=${encodeURIComponent(q)}&pageSize=20&orderBy=-set.releaseDate`);
