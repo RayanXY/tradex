@@ -106,10 +106,10 @@ const Wishlist = () => {
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
       <header className="border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3">
           <Pokeball />
           <span className="text-lg font-bold tracking-widest uppercase">Tradex</span>
-        </div>
+        </Link>
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8 pb-28">

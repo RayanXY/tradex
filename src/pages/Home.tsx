@@ -59,10 +59,10 @@ const Home = () => {
 
       {/* Header */}
       <header className="border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3">
           <Pokeball />
           <span className="text-lg font-bold tracking-widest uppercase">Tradex</span>
-        </div>
+        </Link>
         <Link to="/login" className="text-sm text-[#f4d03f] hover:underline">
           Entrar
         </Link>
