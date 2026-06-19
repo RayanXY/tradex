@@ -5,6 +5,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Showcase from './pages/Showcase'
 import ProtectedRoute from './components/ProtectedRoute'
+import Wishlist from './pages/Wishlist'
 
 const App = () => {
   return (
@@ -19,6 +20,7 @@ const App = () => {
           </ProtectedRoute>
         } />
         <Route path="/u/:phone" element={<Showcase />} />
+        <Route path="/u/:phone/procuro" element={<Wishlist />} />
       </Routes>
     </BrowserRouter>
   )
