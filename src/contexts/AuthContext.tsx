@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import { supabase } from "../lib/supabase"
+import bcrypt from "bcryptjs";
 
 interface User {
   id: string,
@@ -34,21 +35,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .from("users")
       .select("*")
       .eq("phone", phone)
-      .eq("password_hash", password)
       .single();
 
     if (error || !data) return "Telefone ou senha inválidos."
 
+    const valid = await bcrypt.compare(password, data.password_hash);
+    if (!valid) return "Telefone ou senha inválidos."
+
     const u: User = { id: data.id, name: data.name, phone: data.phone };
     setUser(u);
+
     localStorage.setItem("tradex_user", JSON.stringify(u));
+    
     return null
   }
 
   const register = async (name: string, phone: string, password: string): Promise<string | null> => {
+    const hash = await bcrypt.hash(password, 10);
     const { error } = await supabase
       .from('users')
-      .insert({ name, phone, password_hash: password })
+      .insert({ name, phone, password_hash: hash })
 
     if (error) return 'Telefone já cadastrado.'
     return null
