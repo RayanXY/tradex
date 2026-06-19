@@ -22,7 +22,7 @@ const Register = () => {
       setLoading(false);
     } else {
       await login(phone, password);
-      navigate('/inventory');
+      navigate('/dashboard');
     }
   }
 

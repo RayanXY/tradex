@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Inventory from './pages/Inventory'
+import Dashboard from './pages/Dashboard'
 import Showcase from './pages/Showcase'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -13,9 +13,9 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/inventory" element={
+        <Route path="/dashboard" element={
           <ProtectedRoute>
-            <Inventory/>
+            <Dashboard/>
           </ProtectedRoute>
         } />
         <Route path="/u/:phone" element={<Showcase />} />

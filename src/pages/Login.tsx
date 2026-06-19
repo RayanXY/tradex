@@ -20,7 +20,7 @@ const Login = () => {
       setError(err)
       setLoading(false)
     } else {
-      navigate('/inventory')
+      navigate('/dashboard')
     }
   }
 

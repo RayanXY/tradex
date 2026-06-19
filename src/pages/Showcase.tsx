@@ -3,18 +3,19 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 interface Seller {
-  id: string
-  name: string
+  id: string,
+  name: string,
   phone: string
 }
 
 interface Card {
-  id: string
-  name: string
-  set_name: string
-  image_url: string
-  price: number
-  quantity: number
+  id: string,
+  name: string,
+  set_name: string,
+  image_url: string,
+  price: number,
+  quantity: number,
+  type: 'sell' | 'want'
 }
 
 const Pokeball = () => (
@@ -28,12 +29,13 @@ const Pokeball = () => (
 )
 
 const Showcase = () => {
-  const { phone } = useParams<{ phone: string }>()
-  const [seller, setSeller] = useState<Seller | null>(null)
-  const [cards, setCards] = useState<Card[]>([])
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [loading, setLoading] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+  const { phone } = useParams<{ phone: string }>();
+  const [seller, setSeller] = useState<Seller | null>(null);
+  const [selling, setSelling] = useState<Card[]>([]);
+  const [wanting, setWanting] = useState<Card[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -41,48 +43,50 @@ const Showcase = () => {
         .from('users')
         .select('id, name, phone')
         .eq('phone', phone)
-        .single()
+        .single();
 
       if (!userData) {
-        setNotFound(true)
-        setLoading(false)
+        setNotFound(true);
+        setLoading(false);
         return
       }
 
-      setSeller(userData)
+      setSeller(userData);
 
       const { data: cardsData } = await supabase
         .from('cards')
         .select('*')
         .eq('user_id', userData.id)
-        .eq('active', true)
+        .eq('active', true);
 
-      setCards(cardsData ?? [])
-      setLoading(false)
+      const all = cardsData ?? []
+      setSelling(all.filter(c => c.type === 'sell'));
+      setWanting(all.filter(c => c.type === 'want'));
+      setLoading(false);
     }
 
     load()
-  }, [phone])
+  }, [phone]);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next
-    })
+    });
   }
 
   const handleContact = () => {
     if (!seller || selected.size === 0) return
 
-    const selectedCards = cards.filter(c => selected.has(c.id))
+    const selectedCards = selling.filter(c => selected.has(c.id));
     const list = selectedCards
       .map(c => `• ${c.name} (${c.set_name})`)
-      .join('\n')
+      .join('\n');
 
-    const message = `Olá ${seller.name}! Tenho interesse nas seguintes cartas:\n\n${list}`
-    const url = `https://wa.me/55${seller.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`
-    window.open(url, '_blank')
+    const message = `Olá ${seller.name}! Tenho interesse nas seguintes cartas:\n\n${list}`;
+    const url = `https://wa.me/55${seller.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   }
 
   if (loading) {
@@ -103,8 +107,6 @@ const Showcase = () => {
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
-
-      {/* Header */}
       <header className="border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Pokeball />
@@ -112,59 +114,91 @@ const Showcase = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
-
-        {/* Seller info */}
+      <main className="max-w-4xl mx-auto px-6 py-8 pb-28">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#f0f0f0]">{seller?.name}</h1>
           <p className="text-sm text-[#888] mt-1">
-            {cards.length} {cards.length === 1 ? 'carta disponível' : 'cartas disponíveis'}
+            {selling.length} {selling.length === 1 ? 'carta à venda' : 'cartas à venda'}
+            {wanting.length > 0 && ` · procurando ${wanting.length} ${wanting.length === 1 ? 'carta' : 'cartas'}`}
           </p>
         </div>
 
-        {cards.length === 0 ? (
-          <p className="text-sm text-[#555]">Nenhuma carta disponível no momento.</p>
-        ) : (
-          <>
-            <p className="text-xs text-[#555] mb-4">Selecione as cartas de interesse e clique em "Contatar".</p>
+        <section className="mb-10">
+          <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">Vendo</h2>
+          {selling.length === 0 ? (
+            <p className="text-sm text-[#555]">Nenhuma carta à venda no momento.</p>
+          ) : (
+            <>
+              <p className="text-xs text-[#555] mb-4">Selecione as cartas de interesse e clique em "Contatar".</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {selling.map(card => {
+                  const isSelected = selected.has(card.id)
+                  return (
+                    <button
+                      key={card.id}
+                      onClick={() => toggleSelect(card.id)}
+                      className={`flex flex-col gap-2 p-3 rounded-xl border transition-colors text-left cursor-pointer ${
+                        isSelected
+                          ? 'border-[#e3350d] bg-[#1a1a1a]'
+                          : 'border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#444]'
+                      }`}
+                    >
+                      <div className="relative">
+                        <img src={card.image_url} alt={card.name} className="w-full rounded-lg" />
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#e3350d] flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">✓</span>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
+                        <p className="text-xs text-[#888]">{card.set_name}</p>
+                      </div>
+                      <div className="mt-auto">
+                        {card.price != null
+                          ? <p className="text-sm font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
+                          : <p className="text-sm text-[#555]">A negociar</p>
+                        }
+                        <p className="text-xs text-[#888]">Qtd: {card.quantity}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </section>
+
+        <section>
+          <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">Procuro</h2>
+          {wanting.length === 0 ? (
+            <p className="text-sm text-[#555]">Nenhuma carta na lista de busca.</p>
+          ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {cards.map(card => {
-                const isSelected = selected.has(card.id)
-                return (
-                  <button
-                    key={card.id}
-                    onClick={() => toggleSelect(card.id)}
-                    className={`flex flex-col gap-2 p-3 rounded-xl border transition-colors text-left cursor-pointer ${
-                      isSelected
-                        ? 'border-[#e3350d] bg-[#1a1a1a]'
-                        : 'border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#444]'
-                    }`}
-                  >
-                    <div className="relative">
-                      <img src={card.image_url} alt={card.name} className="w-full rounded-lg" />
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#e3350d] flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">✓</span>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
-                      <p className="text-xs text-[#888]">{card.set_name}</p>
-                    </div>
-                    <div className="mt-auto">
-                      <p className="text-sm font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
-                      <p className="text-xs text-[#888]">Qtd: {card.quantity}</p>
-                    </div>
-                  </button>
-                )
-              })}
+              {wanting.map(card => (
+                <div
+                  key={card.id}
+                  className="flex flex-col gap-2 p-3 rounded-xl border border-[#2a2a2a] bg-[#1a1a1a]"
+                >
+                  <img src={card.image_url} alt={card.name} className="w-full rounded-lg opacity-80" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
+                    <p className="text-xs text-[#888]">{card.set_name}</p>
+                  </div>
+                  <div className="mt-auto">
+                    {card.price != null
+                      ? <p className="text-sm font-bold text-[#3b82f6]">Pago até R$ {card.price.toFixed(2)}</p>
+                      : <p className="text-sm text-[#555]">Valor a negociar</p>
+                    }
+                  </div>
+                </div>
+              ))}
             </div>
-          </>
-        )}
+          )}
+        </section>
       </main>
 
-      {/* Floating contact button */}
       {selected.size > 0 && (
         <div className="fixed bottom-6 left-0 right-0 flex justify-center px-6">
           <button
