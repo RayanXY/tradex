@@ -31,19 +31,37 @@ const usePokemonSearch = () => {
     const setNumberPattern = /^([a-zA-Z0-9]+)[\s-](\d+)$/
     const match = query.trim().match(setNumberPattern)
 
-    const q = match
-      ? `set.ptcgoCode:${match[1]} number:${parseInt(match[2])}`
-      : `name:"${query.trim()}"`
-
     try {
-      const res = await fetch(`${BASE_URL}/cards?q=${encodeURIComponent(q)}&pageSize=20&orderBy=-set.releaseDate`);
-      const data = await res.json()
+      let merged: PokemonCard[] = []
 
-      if (!data.data || data.data.length === 0) {
-        setError('Nenhuma carta encontrada.')
-        setResults([])
+      if (match) {
+        const code = match[1].toUpperCase()
+        const number = parseInt(match[2])
+
+        // Primeiro busca o set pelo ptcgoCode
+        const setRes = await fetch(`${BASE_URL}/sets?q=ptcgoCode:${code}`)
+        const setData = await setRes.json()
+        const setId = setData.data?.[0]?.id
+
+        if (!setId) {
+          setError('Nenhuma carta encontrada.')
+          setLoading(false)
+          return
+        }
+
+        const res = await fetch(`${BASE_URL}/cards?q=${encodeURIComponent(`set.id:${setId} number:${number}`)}&pageSize=20`)
+        const data = await res.json()
+        merged = data.data ?? []
       } else {
-        setResults(data.data)
+        const res = await fetch(`${BASE_URL}/cards?q=${encodeURIComponent(`name:"${query.trim()}"`)}&pageSize=20&orderBy=-set.releaseDate`)
+        const data = await res.json()
+        merged = data.data ?? []
+      }
+
+      if (merged.length === 0) {
+        setError('Nenhuma carta encontrada.')
+      } else {
+        setResults(merged)
       }
     } catch {
       setError("Erro ao buscar cartas.")
