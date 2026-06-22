@@ -154,7 +154,7 @@ const Dashboard = () => {
         </Link>
         <div className="flex items-center gap-4">
           <Link
-            to={`/u/${user.phone}`}
+            to={`/u/${user.slug}`}
             className="text-sm text-[#f4d03f] hover:underline"
           >
             Ver mostruário
@@ -290,7 +290,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Vendo</h2>
             {selling.length > 3 && (
-              <Link to={`/u/${user.phone}`} className="text-xs text-[#f4d03f] hover:underline">
+              <Link to={`/u/${user.slug}`} className="text-xs text-[#f4d03f] hover:underline">
                 Ver todas ({selling.length})
               </Link>
             )}
@@ -308,7 +308,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Procuro</h2>
             {wanting.length > 3 && (
-              <Link to={`/u/${user.phone}`} className="text-xs text-[#f4d03f] hover:underline">
+              <Link to={`/u/${user.slug}`} className="text-xs text-[#f4d03f] hover:underline">
                 Ver todas ({wanting.length})
               </Link>
             )}

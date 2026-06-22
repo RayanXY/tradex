@@ -6,13 +6,15 @@ interface User {
   id: string,
   name: string,
   phone: string,
+  email: string,
+  slug: string
 }
 
 interface AuthContextType {
   user: User | null,
   loading: boolean,
-  login: (phone: string, password: string) => Promise<string | null>,
-  register: (name: string, phone: string, password: string) => Promise<string | null>,
+  login: (identifier: string, password: string) => Promise<string | null>,
+  register: (name: string, slug: string, email: string, phone: string, password: string) => Promise<string | null>
   logout: () => void
 }
 
@@ -30,19 +32,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(false);
   }, []);
 
-  const login = async (phone: string, password: string): Promise<string | null> => {
+  const login = async (identifier: string, password: string): Promise<string | null> => {
     const { data, error } = await supabase
       .from("users")
       .select("*")
-      .eq("phone", phone)
+      .or(`email.eq.${identifier},slug.eq.${identifier},phone.eq.${identifier}`)
       .single();
 
-    if (error || !data) return "Telefone ou senha inválidos."
+    if (error || !data) return "Credenciais inválidas."
 
     const valid = await bcrypt.compare(password, data.password_hash);
-    if (!valid) return "Telefone ou senha inválidos."
+    if (!valid) return "Credenciais inválidas."
 
-    const u: User = { id: data.id, name: data.name, phone: data.phone };
+    const u: User = { id: data.id, name: data.name, phone: data.phone, email: data.email, slug: data.slug };
     setUser(u);
 
     localStorage.setItem("tradex_user", JSON.stringify(u));
@@ -50,13 +52,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return null
   }
 
-  const register = async (name: string, phone: string, password: string): Promise<string | null> => {
+  const register = async (name: string, slug: string, email: string, phone: string, password: string): Promise<string | null> => {
     const hash = await bcrypt.hash(password, 10);
     const { error } = await supabase
       .from('users')
-      .insert({ name, phone, password_hash: hash })
+      .insert({ name, slug, email, phone, password_hash: hash })
 
-    if (error) return 'Telefone já cadastrado.'
+    if (error) {
+      if (error.message.includes("slug")) return "Slug já em uso."
+      if (error.message.includes("email")) return "Email já cadastrado."
+      if (error.message.includes("phone")) return "Telefone já cadastrado."
+      return "Erro ao cadastrar."
+    }
     return null
   }
 

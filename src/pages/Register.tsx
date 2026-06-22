@@ -7,6 +7,8 @@ const Register = () => {
   const { register, login } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -16,12 +18,12 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const err = await register(name, phone, password)
+    const err = await register(name, slug, email, phone, password);
     if (err) {
       setError(err);
       setLoading(false);
     } else {
-      await login(phone, password);
+      await login(email, password);
       navigate('/dashboard');
     }
   }
@@ -29,8 +31,6 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-
-        {/* Logo */}
         <div className="flex flex-col items-center mb-8">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="24" cy="24" r="22" stroke="#e3350d" strokeWidth="2.5"/>
@@ -39,24 +39,44 @@ const Register = () => {
             <circle cx="24" cy="24" r="3" fill="#e3350d"/>
             <path d="M2 24C2 12 12 2 24 2C36 2 46 12 46 24" fill="#e3350d" fillOpacity="0.15"/>
           </svg>
-          <span className="mt-3 text-xl font-bold tracking-widest text-[#f0f0f0] uppercase">Tradex</span>
+          <Link to="/" className="mt-3 text-xl font-bold tracking-widest text-[#f0f0f0] uppercase">Tradex</Link>
         </div>
 
-        {/* Card */}
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8">
           <h1 className="text-lg font-semibold text-[#f0f0f0] mb-6">Criar conta</h1>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input
               type="text"
-              placeholder="Nome / Apelido"
+              placeholder="Nome"
               value={name}
               onChange={e => setName(e.target.value)}
               required
               className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
             />
+            <div>
+              <input
+                type="text"
+                placeholder="Apelido (ex: ash1996)"
+                value={slug}
+                onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
+                required
+                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+              />
+              {slug && (
+                <p className="text-xs text-[#555] mt-1">tradex.vercel.app/u/{slug}</p>
+              )}
+            </div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+            />
             <input
               type="text"
-              placeholder="Telefone"
+              placeholder="Telefone (com DDD)"
               value={phone}
               onChange={e => setPhone(e.target.value)}
               required

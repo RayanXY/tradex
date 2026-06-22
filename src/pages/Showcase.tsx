@@ -40,8 +40,8 @@ const Showcase = () => {
     const load = async () => {
       const { data: userData } = await supabase
         .from('users')
-        .select('id, name, phone')
-        .eq('phone', phone)
+        .select('id, name, phone, slug')
+        .eq('slug', phone)
         .single();
 
       if (!userData) {
