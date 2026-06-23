@@ -7,14 +7,11 @@ export interface PokemonCard {
     id: string,
     name: string
   },
-  number: string,
-  images: {
-    small: string,
-    large: string
-  }
+  localId: string,
+  image: string
 }
 
-const BASE_URL = "https://api.pokemontcg.io/v2"
+const BASE_URL = "https://api.tcgdex.net/v2/en"
 
 const usePokemonSearch = () => {
   const [results, setResults] = useState<PokemonCard[]>([]);
@@ -32,39 +29,36 @@ const usePokemonSearch = () => {
     const match = query.trim().match(setNumberPattern)
 
     try {
-      let merged: PokemonCard[] = []
+      let cards: PokemonCard[] = []
 
       if (match) {
-        const code = match[1].toUpperCase()
-        const number = parseInt(match[2])
+        const setId = match[1].toLowerCase();
+        const localId = match[2];
 
-        // Primeiro busca o set pelo ptcgoCode
-        const setRes = await fetch(`${BASE_URL}/sets?q=ptcgoCode:${code}`)
-        const setData = await setRes.json()
-        const setId = setData.data?.[0]?.id
-
-        if (!setId) {
-          setError('Nenhuma carta encontrada.')
-          setLoading(false)
-          return
-        }
-
-        const res = await fetch(`${BASE_URL}/cards?q=${encodeURIComponent(`set.id:${setId} number:${number}`)}&pageSize=20`)
-        const data = await res.json()
-        merged = data.data ?? []
+        const res = await fetch(`${BASE_URL}/cards?localId=${localId}&set.id=${setId}`);
+        const data = await res.json();
+        cards = Array.isArray(data) ? data : [];
       } else {
-        const res = await fetch(`${BASE_URL}/cards?q=${encodeURIComponent(`name:"${query.trim()}"`)}&pageSize=20&orderBy=-set.releaseDate`)
-        const data = await res.json()
-        merged = data.data ?? []
+        const res = await fetch(`${BASE_URL}/cards?name=${encodeURIComponent(query.trim())}&pagination:itemsPerPage=50`);
+        const data = await res.json();
+        cards = Array.isArray(data) ? data : [];
       }
 
-      if (merged.length === 0) {
-        setError('Nenhuma carta encontrada.')
+      const normalized = cards.map(card => ({
+        id: card.id,
+        name: card.name,
+        localId: card.localId,
+        image: card.image ?? '',
+        set: card.set ?? { id: card.id.split('-')[0], name: '' },
+      }));
+
+      if (normalized.length === 0) {
+        setError('Nenhuma carta encontrada.');
       } else {
-        setResults(merged)
+        setResults(normalized);
       }
     } catch {
-      setError("Erro ao buscar cartas.")
+      setError("Erro ao buscar cartas.");
     } finally {
       setLoading(false);
     }

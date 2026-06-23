@@ -86,7 +86,7 @@ const Dashboard = () => {
       tcg_card_id: selectedCard.id,
       name: selectedCard.name,
       set_name: selectedCard.set.name,
-      image_url: selectedCard.images.small,
+      image_url: selectedCard.image ? selectedCard.image + '/low.webp' : '',
       price: price ? parseFloat(price) : null,
       quantity: parseInt(quantity),
       active: true,
@@ -201,7 +201,7 @@ const Dashboard = () => {
                   onClick={() => handleSelectCard(card)}
                   className="group flex flex-col items-center gap-1 p-2 rounded-lg border border-[#2a2a2a] hover:border-[#e3350d] bg-[#1a1a1a] transition-colors cursor-pointer"
                 >
-                  <img src={card.images.small} alt={card.name} className="w-full rounded" />
+                  <img src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="w-full rounded" />
                   <span className="text-xs text-[#888] text-center group-hover:text-[#f0f0f0] transition-colors leading-tight">
                     {card.set.name}
                   </span>
@@ -215,10 +215,10 @@ const Dashboard = () => {
           <section className="mb-8 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
             <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-4">Confirmar adição</h2>
             <div className="flex gap-6 items-start">
-              <img src={selectedCard.images.small} alt={selectedCard.name} className="w-24 rounded-lg" />
+              <img src={selectedCard.image ? selectedCard.image + '/low.webp' : ''} alt={selectedCard.name} className="w-24 rounded-lg" />
               <div className="flex-1">
                 <p className="font-semibold text-[#f0f0f0]">{selectedCard.name}</p>
-                <p className="text-sm text-[#888] mb-4">{selectedCard.set.name} · #{selectedCard.number}</p>
+                <p className="text-sm text-[#888] mb-4">{selectedCard.set.name} · #{selectedCard.localId}</p>
 
                 {/* Type toggle */}
                 <div className="flex gap-2 mb-4">
