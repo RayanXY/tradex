@@ -18,6 +18,8 @@ interface Card {
   type: 'sell' | 'want'
 }
 
+const CARDS_PER_PAGE = 12;
+
 const Pokeball = () => (
   <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="24" cy="24" r="22" stroke="#e3350d" strokeWidth="2.5"/>
@@ -35,9 +37,11 @@ const Showcase = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    const load = async () => {
+    const loadSeller = async () => {
       const { data: userData } = await supabase
         .from('users')
         .select('id, name, phone, slug')
@@ -52,26 +56,49 @@ const Showcase = () => {
 
       setSeller(userData);
 
-      const { data: cardsData } = await supabase
+      const { count } = await supabase
         .from('cards')
-        .select('*')
+        .select('*', { count: 'exact', head: true })
         .eq('user_id', userData.id)
-        .eq('active', true);
+        .eq('active', true)
+        .eq('type', 'sell');
 
-      const all = cardsData ?? [];
-      setSelling(all.filter(c => c.type === 'sell'));
+      setTotal(count ?? 0);
       setLoading(false);
     }
 
-    load()
+    loadSeller();
   }, [phone]);
+
+  useEffect(() => {
+    if (!seller) return
+
+    const loadCards = async () => {
+      const from = (page - 1) * CARDS_PER_PAGE;
+      const to = from + CARDS_PER_PAGE - 1;
+
+      const { data } = await supabase
+        .from('cards')
+        .select('*')
+        .eq('user_id', seller.id)
+        .eq('active', true)
+        .eq('type', 'sell')
+        .range(from, to);
+
+      setSelling(data ?? []);
+    }
+
+    loadCards();
+  }, [seller, page]);
+
+  const totalPages = Math.ceil(total / CARDS_PER_PAGE);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next
-    });
+    })
   }
 
   const handleContact = () => {
@@ -116,7 +143,7 @@ const Showcase = () => {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#f0f0f0]">{seller?.name}</h1>
           <p className="text-sm text-[#888] mt-1">
-            {selling.length} {selling.length === 1 ? 'carta à venda' : 'cartas à venda'}
+            {total} {total === 1 ? 'carta à venda' : 'cartas à venda'}
           </p>
           <Link
             to={`/u/${phone}/procuro`}
@@ -169,6 +196,27 @@ const Showcase = () => {
                   )
                 })}
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
+                  >
+                    ← Anterior
+                  </button>
+                  <span className="text-sm text-[#555]">{page} / {totalPages}</span>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
+                  >
+                    Próxima →
+                  </button>
+                </div>
+              )}
             </>
           )}
         </section>

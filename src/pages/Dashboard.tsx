@@ -17,6 +17,13 @@ interface DashboardCard {
   type: 'sell' | 'want'
 }
 
+interface QueuedCard {
+  card: PokemonCard,
+  price: string,
+  quantity: string,
+  type: 'sell' | 'want'
+}
+
 const Pokeball = () => (
   <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="24" cy="24" r="22" stroke="#e3350d" strokeWidth="2.5"/>
@@ -28,88 +35,104 @@ const Pokeball = () => (
 );
 
 const Dashboard = () => {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const { results, loading: searching, error, search, clear } = usePokemonSearch()
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { results, loading: searching, error, search, clear } = usePokemonSearch();
 
   const [query, setQuery] = useState('');
   const [selling, setSelling] = useState<DashboardCard[]>([]);
   const [wanting, setWanting] = useState<DashboardCard[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
-  const [selectedCard, setSelectedCard] = useState<PokemonCard | null>(null);
-  const [cardType, setCardType] = useState<'sell' | 'want'>('sell')
-  const [price, setPrice] = useState('');
-  const [quantity, setQuantity] = useState('1');
+  const [queue, setQueue] = useState<QueuedCard[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!user) return
+    if (!user) return;
     supabase
       .from('cards')
       .select('*')
       .eq('user_id', user.id)
       .eq('active', true)
       .then(({ data }) => {
-        const all = data ?? []
-        setSelling(all.filter(c => c.type === 'sell'))
-        setWanting(all.filter(c => c.type === 'want'))
-        setLoadingDashboard(false)
-      })
+        const all = data ?? [];
+        setSelling(all.filter(c => c.type === 'sell'));
+        setWanting(all.filter(c => c.type === 'want'));
+        setLoadingDashboard(false);
+      });
   }, [user]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
-  }
+  };
 
   const handleSearch = (e: SubmitEvent) => {
     e.preventDefault();
     search(query);
-  }
+  };
 
   const handleSelectCard = (card: PokemonCard) => {
-    setSelectedCard(card);
-    setCardType('sell');
-    setPrice('');
-    setQuantity('1');
-    clear();
-    setQuery('');
-  }
+    if (queue.some(q => q.card.id === card.id)) return;
+    setQueue(prev => [...prev, { card, price: '', quantity: '1', type: 'sell' }]);
+  };
 
-  const handleAddCard = async () => {
-    if (!selectedCard || !user) return
-    if (cardType === 'sell' && !price) return
-    setSaving(true)
+  const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type', value: string) => {
+    setQueue(prev => prev.map(q =>
+      q.card.id === cardId ? { ...q, [field]: value } : q
+    ));
+  };
 
-    const { data, error: supabaseError } = await supabase.from('cards').insert({
+  const handleQueueRemove = (cardId: string) => {
+    setQueue(prev => prev.filter(q => q.card.id !== cardId));
+  };
+
+  const handleAddAll = async () => {
+    if (!user || queue.length === 0) return;
+
+    const invalid = queue.some(q => q.type === 'sell' && !q.price);
+    if (invalid) return;
+
+    setSaving(true);
+
+    const rows = queue.map(q => ({
       user_id: user.id,
-      tcg_card_id: selectedCard.id,
-      name: selectedCard.name,
-      set_name: selectedCard.set.name,
-      image_url: selectedCard.image ? selectedCard.image + '/low.webp' : '',
-      price: price ? parseFloat(price) : null,
-      quantity: parseInt(quantity),
+      tcg_card_id: q.card.id,
+      name: q.card.name,
+      set_name: q.card.set.name,
+      image_url: q.card.image ? q.card.image + '/low.webp' : '',
+      price: q.price ? parseFloat(q.price) : null,
+      quantity: parseInt(q.quantity),
       active: true,
-      type: cardType,
-    }).select().single();
+      type: q.type,
+    }));
+
+    const { data, error: supabaseError } = await supabase
+      .from('cards')
+      .insert(rows)
+      .select();
 
     if (!supabaseError && data) {
-      if (cardType === 'sell') setSelling(prev => [data, ...prev])
-      else setWanting(prev => [data, ...prev])
-      setSelectedCard(null);
+      const newSell = data.filter(c => c.type === 'sell');
+      const newWant = data.filter(c => c.type === 'want');
+      setSelling(prev => [...newSell, ...prev]);
+      setWanting(prev => [...newWant, ...prev]);
+      setQueue([]);
+      clear();
+      setQuery('');
     }
+
     setSaving(false);
-  }
+  };
 
   const handleRemove = async (id: string, type: 'sell' | 'want') => {
     await supabase.from('cards').update({ active: false }).eq('id', id);
-    if (type === 'sell') setSelling(prev => prev.filter(c => c.id !== id))
-    else setWanting(prev => prev.filter(c => c.id !== id))
-  }
+    if (type === 'sell') setSelling(prev => prev.filter(c => c.id !== id));
+    else setWanting(prev => prev.filter(c => c.id !== id));
+  };
 
   if (!user) {
     navigate('/login');
-    return null
+    return null;
   }
 
   const CardGrid = ({ cards, type }: { cards: DashboardCard[], type: 'sell' | 'want' }) => (
@@ -142,7 +165,7 @@ const Dashboard = () => {
         </div>
       ))}
     </div>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
@@ -170,6 +193,8 @@ const Dashboard = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
+
+        {/* Search */}
         <section className="mb-8">
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">Buscar carta</h2>
           <form onSubmit={handleSearch} className="flex gap-2">
@@ -191,101 +216,121 @@ const Dashboard = () => {
           {error && <p className="text-sm text-[#e3350d] mt-2">{error}</p>}
         </section>
 
+        {/* Search results */}
         {results.length > 0 && (
           <section className="mb-8">
             <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">Resultados</h2>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-              {results.map(card => (
-                <button
-                  key={card.id}
-                  onClick={() => handleSelectCard(card)}
-                  className="group flex flex-col items-center gap-1 p-2 rounded-lg border border-[#2a2a2a] hover:border-[#e3350d] bg-[#1a1a1a] transition-colors cursor-pointer"
-                >
-                  <img src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="w-full rounded" />
-                  <span className="text-xs text-[#888] text-center group-hover:text-[#f0f0f0] transition-colors leading-tight">
-                    {card.set.name}
-                  </span>
-                </button>
+              {results.map(card => {
+                const inQueue = queue.some(q => q.card.id === card.id);
+                return (
+                  <button
+                    key={card.id}
+                    onClick={() => handleSelectCard(card)}
+                    disabled={inQueue}
+                    className={`group flex flex-col items-center gap-1 p-2 rounded-lg border bg-[#1a1a1a] transition-colors cursor-pointer ${
+                      inQueue
+                        ? 'border-[#e3350d] opacity-50 cursor-not-allowed'
+                        : 'border-[#2a2a2a] hover:border-[#e3350d]'
+                    }`}
+                  >
+                    <img src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="w-full rounded" />
+                    <span className="text-xs text-[#888] text-center group-hover:text-[#f0f0f0] transition-colors leading-tight">
+                      {card.set.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Queue */}
+        {queue.length > 0 && (
+          <section className="mb-8 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+            <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-4">Cartas selecionadas</h2>
+            <div className="flex flex-col gap-4">
+              {queue.map(({ card, price, quantity, type }) => (
+                <div key={card.id} className="flex gap-4 items-start border-b border-[#2a2a2a] pb-4 last:border-0 last:pb-0">
+                  <img src={card.image + '/low.webp'} alt={card.name} className="w-16 rounded-lg flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-[#f0f0f0] text-sm">{card.name}</p>
+                    <p className="text-xs text-[#888] mb-3">{card.set.name} · #{card.localId}</p>
+
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      <button
+                        onClick={() => handleQueueUpdate(card.id, 'type', 'sell')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                          type === 'sell'
+                            ? 'bg-[#e3350d] text-white'
+                            : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0]'
+                        }`}
+                      >
+                        Vendo
+                      </button>
+                      <button
+                        onClick={() => handleQueueUpdate(card.id, 'type', 'want')}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                          type === 'want'
+                            ? 'bg-[#3b82f6] text-white'
+                            : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0]'
+                        }`}
+                      >
+                        Procuro
+                      </button>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder={type === 'sell' ? 'Preço (R$)' : 'Pago até (R$) — opcional'}
+                        value={price}
+                        onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)}
+                        min="0"
+                        step="0.01"
+                        className="w-40 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
+                      />
+                      {type === 'sell' && (
+                        <input
+                          type="number"
+                          placeholder="Qtd"
+                          value={quantity}
+                          onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)}
+                          min="1"
+                          className="w-16 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleQueueRemove(card.id)}
+                    className="text-xs text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer mt-1"
+                  >
+                    ✕
+                  </button>
+                </div>
               ))}
             </div>
-          </section>
-        )}
 
-        {selectedCard && (
-          <section className="mb-8 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-            <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-4">Confirmar adição</h2>
-            <div className="flex gap-6 items-start">
-              <img src={selectedCard.image ? selectedCard.image + '/low.webp' : ''} alt={selectedCard.name} className="w-24 rounded-lg" />
-              <div className="flex-1">
-                <p className="font-semibold text-[#f0f0f0]">{selectedCard.name}</p>
-                <p className="text-sm text-[#888] mb-4">{selectedCard.set.name} · #{selectedCard.localId}</p>
-
-                {/* Type toggle */}
-                <div className="flex gap-2 mb-4">
-                  <button
-                    onClick={() => setCardType('sell')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-                      cardType === 'sell'
-                        ? 'bg-[#e3350d] text-white'
-                        : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0]'
-                    }`}
-                  >
-                    Vendo
-                  </button>
-                  <button
-                    onClick={() => setCardType('want')}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-                      cardType === 'want'
-                        ? 'bg-[#3b82f6] text-white'
-                        : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0]'
-                    }`}
-                  >
-                    Procuro
-                  </button>
-                </div>
-
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    placeholder={cardType === 'sell' ? 'Preço (R$)' : 'Pago até (R$) — opcional'}
-                    value={price}
-                    onChange={e => setPrice(e.target.value)}
-                    min="0"
-                    step="0.01"
-                    className="w-48 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
-                  />
-                  {cardType === 'sell' && (
-                    <input
-                      type="number"
-                      placeholder="Qtd"
-                      value={quantity}
-                      onChange={e => setQuantity(e.target.value)}
-                      min="1"
-                      className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
-                    />
-                  )}
-                </div>
-
-                <div className="flex gap-3 mt-4">
-                  <button
-                    onClick={handleAddCard}
-                    disabled={saving || (cardType === 'sell' && !price)}
-                    className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-2 text-sm transition-colors cursor-pointer"
-                  >
-                    {saving ? 'Salvando...' : 'Adicionar'}
-                  </button>
-                  <button
-                    onClick={() => setSelectedCard(null)}
-                    className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleAddAll}
+                disabled={saving || queue.some(q => q.type === 'sell' && !q.price)}
+                className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-6 py-2.5 text-sm transition-colors cursor-pointer"
+              >
+                {saving ? 'Salvando...' : `Adicionar ${queue.length > 1 ? `${queue.length} cartas` : 'carta'}`}
+              </button>
+              <button
+                onClick={() => setQueue([])}
+                className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer"
+              >
+                Limpar seleção
+              </button>
             </div>
           </section>
         )}
 
+        {/* Selling */}
         <section className="mb-8">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Vendo</h2>
@@ -304,6 +349,7 @@ const Dashboard = () => {
           )}
         </section>
 
+        {/* Wanting */}
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Procuro</h2>
@@ -321,9 +367,10 @@ const Dashboard = () => {
             <CardGrid cards={wanting} type="want" />
           )}
         </section>
+
       </main>
     </div>
-  )
-}
+  );
+};
 
 export default Dashboard

@@ -80,20 +80,24 @@ const usePokemonSearch = () => {
             })
           }
         }
+
+        cards = cards.filter(c => c.image);
       } else {
         const res = await fetch(`${BASE_URL}/cards?name=${encodeURIComponent(query.trim())}&pagination:itemsPerPage=50`)
         const data = await res.json()
         const raw = Array.isArray(data) ? data : []
-        cards = raw.map((card: any) => ({
-          id: card.id,
-          name: card.name,
-          localId: card.localId,
-          image: card.image ?? '',
-          set: {
-            id: card.set?.id ?? card.id.split('-')[0],
-            name: card.set?.name ?? '',
-          },
-        }))
+        cards = raw
+          .filter((card: any) => card.image)
+          .map((card: any) => ({
+            id: card.id,
+            name: card.name,
+            localId: card.localId,
+            image: card.image ?? '',
+            set: {
+              id: card.set?.id ?? card.id.split('-')[0],
+              name: card.set?.name ?? '',
+            },
+          }))
       }
 
       if (cards.length === 0) {
