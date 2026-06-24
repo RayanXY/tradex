@@ -290,7 +290,7 @@ const Dashboard = () => {
                     <span className="text-xs text-[#888]">#{card.localId}</span>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => handleQueueUpdate(card.id, 'type', 'sell')}
                       className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${
