@@ -74,20 +74,16 @@ export default async function handler(req) {
               children: cardImages
                 .filter(card => card.src)
                 .map((card, i) => ({
-                  type: 'div',
-                  key: i,
+                  type: 'img',
+                  key: String(i),
                   props: {
+                    src: card.src,
+                    width: 140,
+                    height: 196,
                     style: {
-                      display: 'flex',
-                      width: '140px',
                       borderRadius: '8px',
-                      overflow: 'hidden',
                       border: '1px solid #2a2a2a',
-                      backgroundColor: '#1a1a1a',
-                    },
-                    children: {
-                      type: 'img',
-                      props: { src: card.src, width: 140, height: 196, style: { objectFit: 'cover' } },
+                      objectFit: 'cover',
                     },
                   },
                 })),
