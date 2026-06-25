@@ -1,4 +1,4 @@
-import { ImageResponse } from '@vercel/og'
+import { ImageResponse } from 'https://esm.sh/@vercel/og@0.6.3'
 
 export const config = { runtime: 'edge' }
 
