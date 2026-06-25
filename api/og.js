@@ -20,32 +20,7 @@ export default async function handler(req) {
   if (!users?.length) return new Response('Not found', { status: 404 });
 
   const user = users[0];
-
-  const cardsRes = await fetch(
-    `${supabaseUrl}/rest/v1/cards?user_id=eq.${user.id}&active=eq.true&type=eq.${type}&select=name,image_url&limit=1`,
-    { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
-  );
-  const cards = await cardsRes.json();
   const label = type === 'sell' ? 'Vendo' : 'Procuro';
-  
-  const imageUrl = cards[0]?.image_url ?? null;
-
-  let imgSrc = null;
-  if (imageUrl) {
-    const res = await fetch(imageUrl);
-    const buffer = await res.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    imgSrc = `data:image/webp;base64,${btoa(binary)}`;
-  }
-
-  let child;
-  if (imgSrc) {
-    child = { type: 'img', props: { src: imgSrc, width: 200, height: 280, style: { borderRadius: '8px' } } };
-  } else {
-    child = { type: 'div', props: { style: { color: '#f0f0f0', fontSize: '48px' }, children: user.name } };
-  }
 
   return new ImageResponse(
     {
@@ -59,7 +34,13 @@ export default async function handler(req) {
           height: '100%',
           backgroundColor: '#0f0f0f',
         },
-        children: child,
+        children: {
+          type: 'div',
+          props: {
+            style: { color: '#f0f0f0', fontSize: '48px' },
+            children: `${user.name} · ${label}`,
+          },
+        },
       },
     },
     { width: 1200, height: 630 }
