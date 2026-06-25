@@ -42,6 +42,10 @@ export default async function handler(req) {
     } catch {}
   }
 
+  const child = imgSrc
+  ? { type: 'img', props: { src: imgSrc, width: 200, height: 280, style: { borderRadius: '8px' } } }
+  : { type: 'div', props: { style: { color: '#f0f0f0', fontSize: '48px' }, children: 'sem imagem' } };
+
   return new ImageResponse(
     {
       type: 'div',
@@ -54,9 +58,7 @@ export default async function handler(req) {
           height: '100%',
           backgroundColor: '#0f0f0f',
         },
-        children: imgSrc
-          ? { type: 'img', props: { src: imgSrc, width: 200, height: 280, style: { borderRadius: '8px' } } }
-          : { type: 'div', props: { style: { color: '#f0f0f0', fontSize: '48px' }, children: 'sem imagem' } },
+        children: child,
       },
     },
     { width: 1200, height: 630 }
