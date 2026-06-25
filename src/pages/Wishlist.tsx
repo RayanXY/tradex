@@ -56,6 +56,25 @@ const Wishlist = () => {
 
       setSeller(userData);
 
+      document.title = `${userData.name} — Procuro | Tradex`
+
+      const setMeta = (property: string, content: string) => {
+        let el = document.querySelector(`meta[property="${property}"]`);
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute('property', property);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', content);
+      }
+
+      const origin = window.location.origin;
+      setMeta('og:title', `${userData.name} está procurando cartas no Tradex`);
+      setMeta('og:description', `Veja a lista de busca de ${userData.name} e ofereça suas cartas pelo WhatsApp.`);
+      setMeta('og:image', `${origin}/api/og?slug=${userData.slug}&type=want`);
+      setMeta('og:url', `${origin}/u/${userData.slug}/procuro`);
+      setMeta('og:type', 'website');
+
       const { count } = await supabase
         .from('cards')
         .select('*', { count: 'exact', head: true })

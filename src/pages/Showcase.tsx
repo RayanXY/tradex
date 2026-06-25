@@ -56,6 +56,25 @@ const Showcase = () => {
 
       setSeller(userData);
 
+      document.title = `${userData.name} — Vendo | Tradex`;
+
+      const setMeta = (property: string, content: string) => {
+        let el = document.querySelector(`meta[property="${property}"]`);
+        if (!el) {
+          el = document.createElement('meta');
+          el.setAttribute('property', property);
+          document.head.appendChild(el);
+        }
+        el.setAttribute('content', content);
+      }
+
+      const origin = window.location.origin;
+      setMeta('og:title', `${userData.name} está vendendo cartas no Tradex`);
+      setMeta('og:description', `Veja o mostruário de ${userData.name} e entre em contato pelo WhatsApp.`);
+      setMeta('og:image', `${origin}/api/og?slug=${userData.slug}&type=sell`);
+      setMeta('og:url', `${origin}/u/${userData.slug}`);
+      setMeta('og:type', 'website');
+
       const { count } = await supabase
         .from('cards')
         .select('*', { count: 'exact', head: true })
