@@ -40,9 +40,12 @@ export default async function handler(req) {
     imgSrc = `data:image/webp;base64,${btoa(binary)}`;
   }
 
-  const child = imgSrc
-    ? { type: 'img', props: { src: imgSrc, width: 200, height: 280, style: { borderRadius: '8px' } } }
-    : { type: 'div', props: { style: { color: '#f0f0f0', fontSize: '48px' }, children: user.name } };
+  let child;
+  if (imgSrc) {
+    child = { type: 'img', props: { src: imgSrc, width: 200, height: 280, style: { borderRadius: '8px' } } };
+  } else {
+    child = { type: 'div', props: { style: { color: '#f0f0f0', fontSize: '48px' }, children: user.name } };
+  }
 
   return new ImageResponse(
     {
