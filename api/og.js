@@ -22,7 +22,7 @@ export default async function handler(req) {
   const user = users[0];
 
   const cardsRes = await fetch(
-    `${supabaseUrl}/rest/v1/cards?user_id=eq.${user.id}&active=eq.true&type=eq.${type}&select=name,image_url&limit=6`,
+    `${supabaseUrl}/rest/v1/cards?user_id=eq.${user.id}&active=eq.true&type=eq.${type}&select=name,image_url&limit=1`,
     { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
   );
   const cards = await cardsRes.json();
