@@ -6,6 +6,8 @@
     "module": "esnext",
     "types": ["node"],
     "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -20,5 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "api/**/*"]
 }
