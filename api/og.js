@@ -32,14 +32,12 @@ export default async function handler(req) {
 
   let imgSrc = null;
   if (imageUrl) {
-    try {
-      const res = await fetch(imageUrl);
-      const buffer = await res.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      bytes.forEach(b => binary += String.fromCharCode(b));
-      imgSrc = `data:image/webp;base64,${btoa(binary)}`;
-    } catch {}
+    const res = await fetch(imageUrl);
+    const buffer = await res.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    imgSrc = `data:image/webp;base64,${btoa(binary)}`;
   }
 
   const child = { type: 'div', props: { style: { color: '#f0f0f0', fontSize: '48px' }, children: user.name } };
