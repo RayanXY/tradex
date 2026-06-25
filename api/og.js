@@ -45,6 +45,33 @@ export default async function handler(req) {
     })
   );
 
+  const imageChildren = cardImages.map((card, i) => ({
+    type: 'div',
+    key: String(i),
+    props: {
+      style: {
+        display: 'flex',
+        width: '140px',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        border: '1px solid #2a2a2a',
+        backgroundColor: '#1a1a1a',
+      },
+      children: {
+        type: 'img',
+        props: { src: card.src, width: 140, height: 196, style: { objectFit: 'cover' } },
+      },
+    },
+  }));
+
+  const gridChildren = imageChildren.length === 1 ? imageChildren[0] : imageChildren;
+
+  const headerChildren = [
+    { type: 'div', props: { style: { color: '#e3350d', fontSize: '28px', fontWeight: 'bold', letterSpacing: '4px' }, children: 'TRADEX' } },
+    { type: 'div', props: { style: { color: '#f0f0f0', fontSize: '20px', marginLeft: '12px' }, children: user.name } },
+    { type: 'div', props: { style: { color: '#888', fontSize: '16px', marginLeft: '8px' }, children: label } },
+  ];
+
   return new ImageResponse(
     {
       type: 'div',
@@ -63,35 +90,14 @@ export default async function handler(req) {
             type: 'div',
             props: {
               style: { display: 'flex', alignItems: 'center', marginBottom: '32px', gap: '12px' },
-              children: [
-                { type: 'div', props: { style: { color: '#e3350d', fontSize: '28px', fontWeight: 'bold', letterSpacing: '4px' }, children: 'TRADEX' } },
-                { type: 'div', props: { style: { color: '#f0f0f0', fontSize: '20px', marginLeft: '12px' }, children: user.name } },
-                { type: 'div', props: { style: { color: '#888', fontSize: '16px', marginLeft: '8px' }, children: label } },
-              ],
+              children: headerChildren,
             },
           },
           {
             type: 'div',
             props: {
               style: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
-              children: cardImages.slice(0, 6).map((card, i) => ({
-                type: 'div',
-                key: i,
-                props: {
-                  style: {
-                    display: 'flex',
-                    width: '140px',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    border: '1px solid #2a2a2a',
-                    backgroundColor: '#1a1a1a',
-                  },
-                  children: {
-                    type: 'img',
-                    props: { src: card.src, width: 140, height: 196, style: { objectFit: 'cover' } },
-                  },
-                },
-              })),
+              children: gridChildren,
             },
           },
           {
