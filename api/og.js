@@ -27,6 +27,7 @@ export default async function handler(req) {
   );
   const cards = await cardsRes.json();
   const label = type === 'sell' ? 'Vendo' : 'Procuro';
+  
   const imageUrl = cards[0]?.image_url ?? null;
 
   return new ImageResponse(
@@ -43,25 +44,23 @@ export default async function handler(req) {
           padding: '60px',
           fontFamily: 'sans-serif',
         },
-        children: {
-          type: 'div',
-          props: {
-            style: { display: 'flex', flexDirection: 'column', gap: '8px' },
-            children: {
+        children: imageUrl
+          ? {
+              type: 'img',
+              props: {
+                src: imageUrl,
+                width: 200,
+                height: 280,
+                style: { borderRadius: '8px' },
+              },
+            }
+          : {
               type: 'div',
               props: {
-                style: { display: 'flex', alignItems: 'center', gap: '16px' },
-                children: {
-                  type: 'div',
-                  props: {
-                    style: { color: '#f0f0f0', fontSize: '52px', fontWeight: 'bold' },
-                    children: `${user.name} · ${label}`,
-                  },
-                },
+                style: { color: '#f0f0f0', fontSize: '52px' },
+                children: `${user.name} · ${label}`,
               },
             },
-          },
-        },
       },
     },
     { width: 1200, height: 630 }
