@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 interface Seller {
-  id: string
-  name: string
-  phone: string
+  id: string,
+  name: string,
+  slug: string,
   card_count: number
 }
 
@@ -17,18 +17,18 @@ const Pokeball = () => (
     <circle cx="24" cy="24" r="3" fill="#e3350d"/>
     <path d="M2 24C2 12 12 2 24 2C36 2 46 12 46 24" fill="#e3350d" fillOpacity="0.15"/>
   </svg>
-)
+);
 
 const Home = () => {
-  const [sellers, setSellers] = useState<Seller[]>([])
-  const [loading, setLoading] = useState(true)
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase
         .from('cards')
-        .select('user_id, users(id, name, phone)')
-        .eq('active', true)
+        .select('user_id, users(id, name, slug)')
+        .eq('active', true);
 
       if (!data) {
         setLoading(false)
@@ -36,23 +36,23 @@ const Home = () => {
       }
 
       // Agrupa por vendedor e conta cartas
-      const map = new Map<string, Seller>()
+      const map = new Map<string, Seller>();
       for (const row of data) {
-        const user = row.users as unknown as { id: string; name: string; phone: string }
+        const user = row.users as unknown as { id: string; name: string; slug: string }
         if (!user) continue
         if (map.has(user.id)) {
-          map.get(user.id)!.card_count++
+          map.get(user.id)!.card_count++;
         } else {
-          map.set(user.id, { ...user, card_count: 1 })
+          map.set(user.id, { ...user, card_count: 1 });
         }
       }
 
-      setSellers(Array.from(map.values()))
-      setLoading(false)
+      setSellers(Array.from(map.values()));
+      setLoading(false);
     }
 
-    load()
-  }, [])
+    load();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
@@ -83,7 +83,7 @@ const Home = () => {
             {sellers.map(seller => (
               <Link
                 key={seller.id}
-                to={`/u/${seller.phone}`}
+                to={`/u/${seller.slug}`}
                 className="bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#e3350d] rounded-xl p-5 transition-colors"
               >
                 <p className="font-semibold text-[#f0f0f0]">{seller.name}</p>
