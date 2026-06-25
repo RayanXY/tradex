@@ -1,5 +1,17 @@
 import { ImageResponse } from '@vercel/og';
 
+interface OGUser {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface OGCard {
+  name: string;
+  image_url: string;
+  src?: string;
+}
+
 export const config = { runtime: 'edge' };
 
 export default async function handler(req: Request) {
@@ -16,21 +28,20 @@ export default async function handler(req: Request) {
     `${supabaseUrl}/rest/v1/users?slug=eq.${slug}&select=id,name,slug&limit=1`,
     { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
   );
-  const users = await userRes.json();
+  const users = await userRes.json() as OGUser[];
   if (!users?.length) return new Response('Not found', { status: 404 });
-
   const user = users[0];
 
   const cardsRes = await fetch(
     `${supabaseUrl}/rest/v1/cards?user_id=eq.${user.id}&active=eq.true&type=eq.${type}&select=name,image_url&limit=6`,
     { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
   );
-  const cards = await cardsRes.json();
+  const cards = await cardsRes.json() as OGCard[];
 
   const label = type === 'sell' ? 'Vendo' : 'Procuro';
 
   const cardImages = await Promise.all(
-    cards.slice(0, 6).map(async (card: { image_url: string, name: string }) => {
+    cards.slice(0, 6).map(async (card: OGCard) => {
       try {
         const res = await fetch(card.image_url);
         const buffer = await res.arrayBuffer();
@@ -53,7 +64,7 @@ export default async function handler(req: Request) {
         <div style={{ color: '#888', fontSize: '16px', marginLeft: '8px' }}>{label}</div>
       </div>
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-        {cardImages.map((card, i) => (
+        {cardImages.map((card: OGCard & { src: string }, i: number) => (
           <div key={i} style={{ display: 'flex', width: '140px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #2a2a2a', backgroundColor: '#1a1a1a' }}>
             <img src={card.src} width={140} height={196} style={{ objectFit: 'cover' }} />
           </div>
