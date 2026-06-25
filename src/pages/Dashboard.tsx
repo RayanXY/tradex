@@ -146,7 +146,14 @@ const Dashboard = () => {
           key={card.id}
           className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 flex flex-col gap-2"
         >
-          <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
+          <div className="relative">
+            <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
+            {card.quantity > 0 && (
+              <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[11px] font-bold px-1.5 py-0.5 rounded">
+                x{card.quantity}
+              </div>
+            )}
+          </div>
           <div>
             <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
             <p className="text-xs text-[#888]">{card.set_name}</p>
@@ -157,7 +164,6 @@ const Dashboard = () => {
                 ? <p className="text-sm font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
                 : <p className="text-sm text-[#555]">Valor a negociar</p>
               }
-              {type === 'sell' && <p className="text-xs text-[#888]">Qtd: {card.quantity}</p>}
             </div>
             <button
               onClick={() => handleRemove(card.id, type)}
@@ -321,7 +327,6 @@ const Dashboard = () => {
                       step="0.01"
                       className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
                     />
-                    {type === 'sell' && (
                       <input
                         type="number"
                         placeholder="Qtd"
@@ -330,7 +335,6 @@ const Dashboard = () => {
                         min="1"
                         className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
                       />
-                    )}
                     <button
                       onClick={() => handleQueueRemove(card.id)}
                       className="text-xs text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
