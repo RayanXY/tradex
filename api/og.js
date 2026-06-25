@@ -30,6 +30,18 @@ export default async function handler(req) {
   
   const imageUrl = cards[0]?.image_url ?? null;
 
+  let imgSrc = null;
+  if (imageUrl) {
+    try {
+      const res = await fetch(imageUrl);
+      const buffer = await res.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      bytes.forEach(b => binary += String.fromCharCode(b));
+      imgSrc = `data:image/webp;base64,${btoa(binary)}`;
+    } catch {}
+  }
+
   return new ImageResponse(
     {
       type: 'div',
@@ -37,30 +49,14 @@ export default async function handler(req) {
         style: {
           display: 'flex',
           alignItems: 'center',
-          gap: '32px',
+          justifyContent: 'center',
           width: '100%',
           height: '100%',
           backgroundColor: '#0f0f0f',
-          padding: '60px',
-          fontFamily: 'sans-serif',
         },
-        children: imageUrl
-          ? {
-              type: 'img',
-              props: {
-                src: imageUrl,
-                width: 200,
-                height: 280,
-                style: { borderRadius: '8px' },
-              },
-            }
-          : {
-              type: 'div',
-              props: {
-                style: { color: '#f0f0f0', fontSize: '52px' },
-                children: `${user.name} · ${label}`,
-              },
-            },
+        children: imgSrc
+          ? { type: 'img', props: { src: imgSrc, width: 200, height: 280, style: { borderRadius: '8px' } } }
+          : { type: 'div', props: { style: { color: '#f0f0f0', fontSize: '48px' }, children: 'sem imagem' } },
       },
     },
     { width: 1200, height: 630 }
