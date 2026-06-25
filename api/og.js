@@ -27,6 +27,19 @@ export default async function handler(req) {
   );
   const cards = await cardsRes.json();
 
+  const cardImages = await Promise.all(
+    cards.slice(0, 6).map(async (card) => {
+      try {
+        const res = await fetch(card.image_url);
+        const buffer = await res.arrayBuffer();
+        const base64 = Buffer.from(buffer).toString('base64');
+        return { ...card, src: `data:image/webp;base64,${base64}` };
+      } catch {
+        return { ...card, src: null };
+      }
+    })
+  );
+
   const label = type === 'sell' ? 'Vendo' : 'Procuro';
 
   return new ImageResponse(
@@ -58,24 +71,26 @@ export default async function handler(req) {
             type: 'div',
             props: {
               style: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
-              children: cards.slice(0, 6).map((card, i) => ({
-                type: 'div',
-                key: i,
-                props: {
-                  style: {
-                    display: 'flex',
-                    width: '140px',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    border: '1px solid #2a2a2a',
-                    backgroundColor: '#1a1a1a',
+              children: cardImages
+                .filter(card => card.src)
+                .map((card, i) => ({
+                  type: 'div',
+                  key: i,
+                  props: {
+                    style: {
+                      display: 'flex',
+                      width: '140px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      border: '1px solid #2a2a2a',
+                      backgroundColor: '#1a1a1a',
+                    },
+                    children: {
+                      type: 'img',
+                      props: { src: card.src, width: 140, height: 196, style: { objectFit: 'cover' } },
+                    },
                   },
-                  children: {
-                    type: 'img',
-                    props: { src: card.image_url, width: 140, height: 196, style: { objectFit: 'cover' } },
-                  },
-                },
-              })),
+                })),
             },
           },
           {
