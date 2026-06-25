@@ -200,6 +200,9 @@ const Showcase = () => {
                             <span className="text-white text-xs font-bold">✓</span>
                           </div>
                         )}
+                        <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
+                          x{card.quantity}
+                        </div>
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
@@ -210,7 +213,6 @@ const Showcase = () => {
                           ? <p className="text-sm font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
                           : <p className="text-sm text-[#555]">A negociar</p>
                         }
-                        <p className="text-xs text-[#888]">Qtd: {card.quantity}</p>
                       </div>
                     </button>
                   )

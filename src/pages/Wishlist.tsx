@@ -194,10 +194,13 @@ const Wishlist = () => {
                     <div className="relative">
                       <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
                       {isSelected && (
-                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#3b82f6] flex items-center justify-center">
+                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#e3350d] flex items-center justify-center">
                           <span className="text-white text-xs font-bold">✓</span>
                         </div>
                       )}
+                      <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        x{card.quantity}
+                      </div>
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
