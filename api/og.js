@@ -39,6 +39,23 @@ export default async function handler(req) {
     } catch {}
   }
 
+  const innerChildren = [];
+
+  if (imgSrc) {
+    innerChildren.push({
+      type: 'img',
+      props: { src: imgSrc, width: 140, height: 196, style: { borderRadius: '8px' } },
+    });
+  }
+
+  innerChildren.push({
+    type: 'div',
+    props: {
+      style: { color: '#f0f0f0', fontSize: '48px' },
+      children: `${user.name} — ${label}`,
+    },
+  });
+
   return new ImageResponse(
     {
       type: 'div',
@@ -54,18 +71,7 @@ export default async function handler(req) {
           type: 'div',
           props: {
             style: { display: 'flex', alignItems: 'center', gap: '24px' },
-            children: [
-              imgSrc
-                ? { type: 'img', props: { src: imgSrc, width: 140, height: 196, style: { borderRadius: '8px' } } }
-                : { type: 'div', props: { style: { width: '140px', height: '196px', backgroundColor: '#1a1a1a', borderRadius: '8px' }, children: '' } },
-              {
-                type: 'div',
-                props: {
-                  style: { color: '#f0f0f0', fontSize: '48px' },
-                  children: `${user.name} — ${label}`,
-                },
-              },
-            ],
+            children: innerChildren,
           },
         },
       },
