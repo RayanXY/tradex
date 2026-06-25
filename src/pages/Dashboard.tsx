@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { SubmitEvent } from 'react'
 import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
+import CardImage from '../components/CardImage'
 
 interface DashboardCard {
   id: string,
@@ -145,7 +146,7 @@ const Dashboard = () => {
           key={card.id}
           className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 flex flex-col gap-2"
         >
-          <img src={card.image_url} alt={card.name} className="w-full rounded-lg" />
+          <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
           <div>
             <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
             <p className="text-xs text-[#888]">{card.set_name}</p>
@@ -246,7 +247,7 @@ const Dashboard = () => {
                     }`}
                   >
                     <div className="relative w-full">
-                      <img src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="w-full rounded" />
+                      <CardImage src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="rounded-lg" />
                       {inQueue && (
                         <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#e3350d] flex items-center justify-center">
                           <span className="text-white text-[9px] font-bold">✓</span>

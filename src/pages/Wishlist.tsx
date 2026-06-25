@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import CardImage from '../components/CardImage'
 
 interface Seller {
   id: string,
@@ -191,7 +192,7 @@ const Wishlist = () => {
                     }`}
                   >
                     <div className="relative">
-                      <img src={card.image_url} alt={card.name} className="w-full rounded-lg" />
+                      <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
                       {isSelected && (
                         <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#3b82f6] flex items-center justify-center">
                           <span className="text-white text-xs font-bold">✓</span>
