@@ -15,14 +15,16 @@ interface DashboardCard {
   price: number,
   quantity: number,
   active: boolean,
-  type: 'sell' | 'want'
+  type: 'sell' | 'want',
+  condition: string
 }
 
 interface QueuedCard {
   card: PokemonCard,
   price: string,
   quantity: string,
-  type: 'sell' | 'want'
+  type: 'sell' | 'want',
+  condition: string
 }
 
 const Pokeball = () => (
@@ -34,6 +36,15 @@ const Pokeball = () => (
     <path d="M2 24C2 12 12 2 24 2C36 2 46 12 46 24" fill="#e3350d" fillOpacity="0.15"/>
   </svg>
 );
+
+const conditionColor: Record<string, { bg: string, text: string, border: string }> = {
+  M:   { bg: '#ffd700', text: '#000', border: '#b8960c' },
+  NM:  { bg: '#22c55e', text: '#000', border: '#15803d' },
+  LP:  { bg: '#86efac', text: '#000', border: '#16a34a' },
+  MP:  { bg: '#facc15', text: '#000', border: '#ca8a04' },
+  HP:  { bg: '#f97316', text: '#000', border: '#c2410c' },
+  DMG: { bg: '#ef4444', text: '#fff', border: '#b91c1c' },
+}
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -77,10 +88,10 @@ const Dashboard = () => {
       handleQueueRemove(card.id);
       return;
     }
-    setQueue(prev => [...prev, { card, price: '', quantity: '1', type: 'sell' }]);
+    setQueue(prev => [...prev, { card, price: '', quantity: '1', type: 'sell', condition: "NM" }]);
   };
 
-  const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type', value: string) => {
+  const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type' | 'condition', value: string) => {
     setQueue(prev => prev.map(q =>
       q.card.id === cardId ? { ...q, [field]: value } : q
     ));
@@ -108,6 +119,7 @@ const Dashboard = () => {
       quantity: parseInt(q.quantity),
       active: true,
       type: q.type,
+      condition: q.condition,
     }));
 
     const { data, error: supabaseError } = await supabase
@@ -139,15 +151,22 @@ const Dashboard = () => {
     return null;
   }
 
+
   const CardGrid = ({ cards, type }: { cards: DashboardCard[], type: 'sell' | 'want' }) => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      {cards.slice(0, 3).map(card => (
+      {cards.slice(0, 3).map(card => {
+        const c = conditionColor[card.condition] ?? conditionColor['NM'];
+        return (
         <div
           key={card.id}
           className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 flex flex-col gap-2"
         >
           <div className="relative">
             <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
+            <div style={{ backgroundColor: c.bg, borderColor: c.border, color: c.text }}
+              className="absolute -top-2 -left-2 border-2 text-[10px] font-bold px-1.5 py-0.5 rounded">
+              {card.condition}
+            </div>
             {card.quantity > 0 && (
               <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[11px] font-bold px-1.5 py-0.5 rounded">
                 x{card.quantity}
@@ -173,7 +192,8 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   );
 
@@ -287,7 +307,7 @@ const Dashboard = () => {
           <section className="mb-8 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
             <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-4">Cartas selecionadas</h2>
             <div className="flex flex-col gap-2">
-              {queue.map(({ card, price, quantity, type }) => (
+              {queue.map(({ card, price, quantity, type, condition }) => (
                 <div key={card.id} className="flex items-center gap-3 border-b border-[#2a2a2a] pb-2 last:border-0 last:pb-0">
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-semibold text-[#f0f0f0]">{card.name}</span>
@@ -327,14 +347,26 @@ const Dashboard = () => {
                       step="0.01"
                       className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
                     />
-                      <input
-                        type="number"
-                        placeholder="Qtd"
-                        value={quantity}
-                        onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)}
-                        min="1"
-                        className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
-                      />
+                    <input
+                      type="number"
+                      placeholder="Qtd"
+                      value={quantity}
+                      onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)}
+                      min="1"
+                      className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
+                    />
+                    <select
+                      value={condition}
+                      onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)}
+                      className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] transition-colors cursor-pointer"
+                    >
+                      <option value="M">M</option>
+                      <option value="NM">NM</option>
+                      <option value="LP">LP</option>
+                      <option value="MP">MP</option>
+                      <option value="HP">HP</option>
+                      <option value="DMG">DMG</option>
+                    </select>
                     <button
                       onClick={() => handleQueueRemove(card.id)}
                       className="text-xs text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"

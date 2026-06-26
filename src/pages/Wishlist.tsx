@@ -16,7 +16,17 @@ interface Card {
   image_url: string,
   price: number | null,
   quantity: number,
-  type: 'sell' | 'want'
+  type: 'sell' | 'want',
+  condition: string
+}
+
+const conditionColor: Record<string, { bg: string, text: string, border: string }> = {
+  M:   { bg: '#ffd700', text: '#000', border: '#b8960c' },
+  NM:  { bg: '#22c55e', text: '#000', border: '#15803d' },
+  LP:  { bg: '#86efac', text: '#000', border: '#16a34a' },
+  MP:  { bg: '#facc15', text: '#000', border: '#ca8a04' },
+  HP:  { bg: '#f97316', text: '#000', border: '#c2410c' },
+  DMG: { bg: '#ef4444', text: '#fff', border: '#b91c1c' },
 }
 
 const CARDS_PER_PAGE = 12;
@@ -194,10 +204,16 @@ const Wishlist = () => {
                     <div className="relative">
                       <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
                       {isSelected && (
-                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#e3350d] flex items-center justify-center">
+                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#3b82f6] flex items-center justify-center">
                           <span className="text-white text-xs font-bold">✓</span>
                         </div>
                       )}
+                      <div
+                        style={{ backgroundColor: conditionColor[card.condition]?.bg ?? '#22c55e', borderColor: conditionColor[card.condition]?.border ?? '#15803d', color: conditionColor[card.condition]?.text ?? '#000' }}
+                        className="absolute -top-2 -left-2 border-2 text-[10px] font-bold px-1.5 py-0.5 rounded"
+                      >
+                        {card.condition ?? 'NM'}
+                      </div>
                       <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
                         x{card.quantity}
                       </div>
