@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import Navbar from '../components/Navbar';
 
 interface Seller {
   id: string,
@@ -8,16 +9,6 @@ interface Seller {
   slug: string,
   card_count: number
 }
-
-const Pokeball = () => (
-  <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="24" cy="24" r="22" stroke="#e3350d" strokeWidth="2.5"/>
-    <path d="M2 24h44" stroke="#e3350d" strokeWidth="2.5"/>
-    <circle cx="24" cy="24" r="6" fill="#0f0f0f" stroke="#e3350d" strokeWidth="2.5"/>
-    <circle cx="24" cy="24" r="3" fill="#e3350d"/>
-    <path d="M2 24C2 12 12 2 24 2C36 2 46 12 46 24" fill="#e3350d" fillOpacity="0.15"/>
-  </svg>
-);
 
 const Home = () => {
   const [sellers, setSellers] = useState<Seller[]>([]);
@@ -56,17 +47,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
-
-      {/* Header */}
-      <header className="border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <Pokeball />
-          <span className="text-lg font-bold tracking-widest uppercase">Tradex</span>
-        </Link>
-        <Link to="/login" className="text-sm text-[#f4d03f] hover:underline">
-          Entrar
-        </Link>
-      </header>
+      <Navbar />
 
       <main className="max-w-4xl mx-auto px-6 py-8">
         <div className="mb-8">

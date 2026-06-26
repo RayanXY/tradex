@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import type { SubmitEvent } from 'react'
 import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
 import CardImage from '../components/CardImage'
+import Navbar from '../components/Navbar'
 
 interface DashboardCard {
   id: string,
@@ -26,16 +27,6 @@ interface QueuedCard {
   type: 'sell' | 'want',
   condition: string
 }
-
-const Pokeball = () => (
-  <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="24" cy="24" r="22" stroke="#e3350d" strokeWidth="2.5"/>
-    <path d="M2 24h44" stroke="#e3350d" strokeWidth="2.5"/>
-    <circle cx="24" cy="24" r="6" fill="#0f0f0f" stroke="#e3350d" strokeWidth="2.5"/>
-    <circle cx="24" cy="24" r="3" fill="#e3350d"/>
-    <path d="M2 24C2 12 12 2 24 2C36 2 46 12 46 24" fill="#e3350d" fillOpacity="0.15"/>
-  </svg>
-);
 
 const conditionColor: Record<string, { bg: string, text: string, border: string }> = {
   M:   { bg: '#ffd700', text: '#000', border: '#b8960c' },
@@ -72,11 +63,6 @@ const Dashboard = () => {
         setLoadingDashboard(false);
       });
   }, [user]);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const handleSearch = (e: SubmitEvent) => {
     e.preventDefault();
@@ -199,31 +185,9 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
-
-      <header className="border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3">
-          <Pokeball />
-          <span className="text-lg font-bold tracking-widest uppercase">Tradex</span>
-        </Link>
-        <div className="flex items-center gap-4">
-          <Link
-            to={`/u/${user.slug}`}
-            className="text-sm text-[#f4d03f] hover:underline"
-          >
-            Ver mostruário
-          </Link>
-          <span className="text-sm text-[#888]">{user.name}</span>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-[#888] hover:text-[#e3350d] transition-colors cursor-pointer"
-          >
-            Sair
-          </button>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-
         {/* Search */}
         <section className="mb-8">
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">Buscar carta</h2>
