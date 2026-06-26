@@ -38,7 +38,7 @@ const conditionColor: Record<string, { bg: string, text: string, border: string 
 }
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { results, loading: searching, error, hasMore, search, loadMore, clear } = usePokemonSearch();
 
