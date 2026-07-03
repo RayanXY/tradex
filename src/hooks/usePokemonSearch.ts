@@ -15,6 +15,14 @@ export interface PokemonCard {
 const BASE_URL = "https://api.tcgdex.net/v2/en";
 const PAGE_SIZE = 24;
 
+let validSetIds: Set<string> | null = null;
+
+const loadValidSets = async () => {
+  if (validSetIds) return;
+  const { data } = await supabase.from('sets').select('id');
+  validSetIds = new Set((data ?? []).map((s: { id: string }) => s.id));
+};
+
 const usePokemonSearch = () => {
   const [results, setResults] = useState<PokemonCard[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,6 +37,8 @@ const usePokemonSearch = () => {
     setLoading(true);
     setError(null);
     if (pageNum === 1) setResults([]);
+
+    await loadValidSets();
 
     const trimmed = query.trimStart();
     const setNumberPattern = /^([a-zA-Z0-9]+)[\s-](\d+)$/;
@@ -87,7 +97,6 @@ const usePokemonSearch = () => {
         }
 
         cards = cards.filter(c => c.image);
-        setHasMore(false);
       } else {
         const res = await fetch(
           `${BASE_URL}/cards?name=${encodeURIComponent(trimmed)}&pagination:itemsPerPage=${PAGE_SIZE}&pagination:page=${pageNum}`
@@ -110,6 +119,8 @@ const usePokemonSearch = () => {
         cards = pageNum === 1 ? mapped : [...results, ...mapped];
         setHasMore(raw.length === PAGE_SIZE);
       }
+
+      cards = cards.filter(c => validSetIds?.has(c.set.id) ?? true);
 
       if (cards.length === 0) {
         setError('Nenhuma carta encontrada.');
@@ -134,7 +145,15 @@ const usePokemonSearch = () => {
     setCurrentQuery('');
   };
 
-  return { results, loading, error, hasMore, search, loadMore, clear };
+  const invalidateSetCache = () => {
+    validSetIds = null;
+  };
+
+  return { results, loading, error, hasMore, search, loadMore, clear, invalidateSetCache };
+};
+
+export const invalidateSetCache = () => {
+  validSetIds = null;
 };
 
 export default usePokemonSearch

@@ -15,12 +15,13 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const err = await login(identifier, password);
+    const err = await login(identifier, password)
     if (err) {
       setError(err);
       setLoading(false);
     } else {
-      navigate('/dashboard');
+      const stored = JSON.parse(localStorage.getItem('tradex_user') ?? '{}');
+      navigate(stored.role === 'admin' ? '/admin' : '/dashboard');
     }
   }
 

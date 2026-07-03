@@ -22,7 +22,7 @@ const Navbar = () => {
 
   return (
     <header className="border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
-      <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-3">
+      <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-3">
         <Pokeball />
         <span className="text-lg font-bold tracking-widest uppercase">Tradex</span>
       </Link>
@@ -32,10 +32,12 @@ const Navbar = () => {
             <Link to="/" className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">
               Vendedores
             </Link>
-            <Link to={`/u/${user.slug}`} className="text-sm text-[#f4d03f] hover:underline">
-              Ver mostruário
-            </Link>
-            <Link to="/dashboard" className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">
+            {user.role !== "admin" && (
+              <Link to={`/u/${user.slug}`} className="text-sm text-[#f4d03f] hover:underline">
+                Ver mostruário
+              </Link>
+            )}
+            <Link to={user.role !== "admin" ? "/dashboard" : "/admin"} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">
               {user.name}
             </Link>
             <button

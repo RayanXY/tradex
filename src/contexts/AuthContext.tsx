@@ -7,7 +7,8 @@ interface User {
   name: string,
   phone: string,
   email: string,
-  slug: string
+  slug: string,
+  role: string
 }
 
 interface AuthContextType {
@@ -44,7 +45,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const valid = await bcrypt.compare(password, data.password_hash);
     if (!valid) return "Credenciais inválidas."
 
-    const u: User = { id: data.id, name: data.name, phone: data.phone, email: data.email, slug: data.slug };
+    const u: User = { id: data.id, name: data.name, phone: data.phone, email: data.email, slug: data.slug, role: data.role };
     setUser(u);
 
     localStorage.setItem("tradex_user", JSON.stringify(u));
