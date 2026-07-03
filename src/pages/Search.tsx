@@ -166,15 +166,18 @@ const Search = () => {
                 </button>
                 {openSeries.has(serie) && (
                   <div className="ml-3 flex flex-col gap-0.5 mb-1">
-                    {sets.filter(s => s.serie === serie).map(set => (
-                      <button
-                        key={set.id}
-                        onClick={() => handleSetClick(set.id)}
-                        className="text-left px-3 py-1.5 rounded text-xs text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a] transition-colors cursor-pointer"
-                      >
-                        {set.name}
-                      </button>
-                    ))}
+                    {sets
+                      .filter(s => s.serie === serie)
+                      .sort((a, b) => (b.release_date ?? '').localeCompare(a.release_date ?? ''))
+                      .map(set => (
+                        <button
+                          key={set.id}
+                          onClick={() => handleSetClick(set.id)}
+                          className="text-left px-3 py-1.5 rounded text-xs text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a] transition-colors cursor-pointer"
+                        >
+                          {set.name}
+                        </button>
+                      ))}
                   </div>
                 )}
               </div>
