@@ -23,7 +23,8 @@ interface SetItem {
   id: string,
   name: string,
   serie: string,
-  release_date: string | null
+  release_date: string | null,
+  ptcgo_code: string | null
 }
 
 const Search = () => {
@@ -51,7 +52,7 @@ const Search = () => {
   useEffect(() => {
     supabase
       .from('sets')
-      .select('id, name, serie, release_date')
+      .select('id, name, serie, release_date, ptcgo_code')
       .order('release_date', { ascending: false, nullsFirst: false })
       .then(({ data }) => setSets(data ?? []));
   }, []);
@@ -78,14 +79,21 @@ const Search = () => {
     
     const res = await fetch(`https://api.tcgdex.net/v2/en/cards?set.id=${setId}&pagination:itemsPerPage=250`);
     const data = await res.json();
-    const cards = Array.isArray(data) ? data.filter((c: any) => c.image) : [];
+    const cards = Array.isArray(data)
+      ? data.filter((c: any) => c.image && c.id.startsWith(setId + '-'))
+      : [];
+    const setInfo = sets.find(s => s.id === setId);
 
     setSetResults(cards.map((c: any) => ({
       id: c.id,
       name: c.name,
       localId: c.localId,
       image: c.image ?? '',
-      set: { id: setId, name: sets.find(s => s.id === setId)?.name ?? '' },
+      set: {
+        id: setId,
+        name: setInfo?.name ?? '',
+        ptcgo_code: setInfo?.ptcgo_code ?? null,
+      },
     })));
     setLoadingSet(false);
   };
@@ -241,9 +249,14 @@ const Search = () => {
                           </div>
                         )}
                       </div>
-                      <span className="text-xs text-center leading-tight transition-colors group-hover:text-[#f0f0f0] text-[#888]">
-                        {inSell ? '● Vendo' : inWant ? '● Procuro' : card.set.name}
-                      </span>
+                      <div className="flex flex-col items-center text-xs text-center leading-tight text-[#888] group-hover:text-[#f0f0f0] transition-colors">
+                        {inSell ? '● Vendo' : inWant ? '● Procuro' : (
+                          <>
+                            <span>{card.name}</span>
+                            <span>{(card.set.ptcgo_code ?? card.set.id).toUpperCase()} · #{card.localId}</span>
+                          </>
+                        )}
+                      </div>
                     </button>
                   );
                 })}

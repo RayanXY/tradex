@@ -6,7 +6,8 @@ export interface PokemonCard {
   name: string,
   set: {
     id: string,
-    name: string
+    name: string,
+    ptcgo_code?: string | null,
   },
   localId: string,
   image: string
@@ -53,7 +54,7 @@ const usePokemonSearch = () => {
 
         const { data: setData } = await supabase
           .from('sets')
-          .select('id, name')
+          .select('id, name, ptcgo_code')
           .or(`ptcgo_code.eq.${userCode},id.eq.${userCode.toLowerCase()}`)
           .limit(1);
 
@@ -65,6 +66,7 @@ const usePokemonSearch = () => {
 
         const setId = setData[0].id;
         const setName = setData[0].name;
+        const setPtcgo = setData[0].ptcgo_code ?? null;
 
         const withZeros = `${setId}-${localId}`;
         const withoutZeros = `${setId}-${parseInt(localId)}`;
@@ -91,6 +93,7 @@ const usePokemonSearch = () => {
               set: {
                 id: card.set?.id ?? setId,
                 name: card.set?.name ?? setName,
+                ptcgo_code: setPtcgo,
               },
             });
           }
@@ -113,6 +116,7 @@ const usePokemonSearch = () => {
             set: {
               id: card.set?.id ?? card.id.split('-')[0],
               name: card.set?.name ?? '',
+              ptcgo_code: null,
             },
           }));
 
