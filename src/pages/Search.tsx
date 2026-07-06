@@ -32,15 +32,15 @@ const Search = () => {
   const { results, loading: searching, error, hasMore, search, loadMore, clear } = usePokemonSearch();
 
   const [query, setQuery] = useState('');
-  const [queue, setQueue] = useState<QueuedCard[]>([]);
   const [saving, setSaving] = useState(false);
-  const [inventory, setInventory] = useState<DashboardCard[]>([]);
   const [sets, setSets] = useState<SetItem[]>([]);
-  const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
-  const [loadingSet, setLoadingSet] = useState(false);
-  const [setResults, setSetResults] = useState<PokemonCard[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loadingSet, setLoadingSet] = useState(false);
+  const [queue, setQueue] = useState<QueuedCard[]>([]);
   const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
+  const [setResults, setSetResults] = useState<PokemonCard[]>([]);
+  const [inventory, setInventory] = useState<DashboardCard[]>([]);
+  const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
