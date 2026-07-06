@@ -8,7 +8,7 @@ import Navbar from '../components/Navbar'
 interface DashboardCard {
   id: string,
   tcg_card_id: string,
-  type: 'sell' | 'want',
+  type: 'sell' | 'want'
 }
 
 interface QueuedCard {
@@ -24,7 +24,7 @@ interface SetItem {
   name: string,
   serie: string,
   release_date: string | null,
-  ptcgo_code: string | null,
+  ptcgo_code: string | null
 }
 
 const Search = () => {
@@ -40,6 +40,7 @@ const Search = () => {
   const [loadingSet, setLoadingSet] = useState(false);
   const [setResults, setSetResults] = useState<PokemonCard[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -65,8 +66,11 @@ const Search = () => {
       .sort((a, b) => (b.release_date ?? '').localeCompare(a.release_date ?? ''))
       .map(s => s.serie)
   )];
-  const seriesWithoutDate = [...new Set(sets.filter(s => !s.release_date).map(s => s.serie))].filter(s => !seriesWithDate.includes(s));
-  const seriesOrder = [...seriesWithDate, ...seriesWithoutDate].filter(s => s !== 'Other');
+  const seriesWithoutDate = [...new Set(
+    sets.filter(s => !s.release_date).map(s => s.serie)
+  )].filter(s => !seriesWithDate.includes(s));
+  const seriesOrder = [...seriesWithDate, ...seriesWithoutDate]
+    .filter(s => s !== 'Other');
   seriesOrder.push('Other');
 
   const toggleSerie = (serie: string) => {
@@ -154,6 +158,7 @@ const Search = () => {
     if (!supabaseError && data) {
       setInventory(prev => [...prev, ...data.map(c => ({ id: c.id, tcg_card_id: c.tcg_card_id, type: c.type }))]);
       setQueue([]);
+      setQueueDrawerOpen(false);
     }
 
     setSaving(false);
@@ -195,15 +200,15 @@ const Search = () => {
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
       <Navbar />
 
-      {/* Mobile drawer overlay */}
-      {drawerOpen && (
+      {/* Overlays */}
+      {(drawerOpen || queueDrawerOpen) && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 md:hidden"
-          onClick={() => setDrawerOpen(false)}
+          className="fixed inset-0 bg-black/60 z-40"
+          onClick={() => { setDrawerOpen(false); setQueueDrawerOpen(false); }}
         />
       )}
 
-      {/* Mobile drawer */}
+      {/* Sets drawer (esquerda) */}
       <div className={`fixed top-0 left-0 h-full w-72 bg-[#111] border-r border-[#2a2a2a] z-50 transform transition-transform duration-300 overflow-y-auto md:hidden ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Sets</h2>
@@ -211,6 +216,90 @@ const Search = () => {
         </div>
         <div className="p-3">
           <SidebarContent />
+        </div>
+      </div>
+
+      {/* Queue drawer (direita) */}
+      <div className={`fixed top-0 right-0 h-full w-full max-w-sm bg-[#111] border-l border-[#2a2a2a] z-50 transform transition-transform duration-300 overflow-y-auto ${queueDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
+          <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">
+            Selecionadas ({queue.length})
+          </h2>
+          <button onClick={() => setQueueDrawerOpen(false)} className="text-[#555] hover:text-[#f0f0f0] cursor-pointer text-lg">✕</button>
+        </div>
+        <div className="p-4 flex flex-col gap-3">
+          {queue.length === 0 ? (
+            <p className="text-sm text-[#555]">Nenhuma carta selecionada.</p>
+          ) : (
+            <>
+              {queue.map(({ card, price, quantity, type, condition }) => (
+                <div key={card.id} className="flex flex-col gap-2 border-b border-[#2a2a2a] pb-3 last:border-0 last:pb-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-semibold text-[#f0f0f0]">{card.name}</span>
+                      <span className="text-xs text-[#555] mx-1">·</span>
+                      <span className="text-xs text-[#888]">{(card.set.ptcgo_code ?? card.set.id).toUpperCase()} #{card.localId}</span>
+                    </div>
+                    <button onClick={() => handleQueueRemove(card.id)} className="text-xs text-[#555] hover:text-[#e3350d] cursor-pointer">✕</button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleQueueUpdate(card.id, 'type', 'sell')}
+                      className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}
+                    >Vendo</button>
+                    <button
+                      onClick={() => handleQueueUpdate(card.id, 'type', 'want')}
+                      className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}
+                    >Procuro</button>
+                    <input
+                      type="number"
+                      placeholder={type === 'sell' ? 'R$' : 'Até R$'}
+                      value={price}
+                      onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)}
+                      min="0"
+                      step="0.01"
+                      className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Qtd"
+                      value={quantity}
+                      onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)}
+                      min="1"
+                      className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]"
+                    />
+                    <select
+                      value={condition}
+                      onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)}
+                      className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+                    >
+                      <option value="M">M</option>
+                      <option value="NM">NM</option>
+                      <option value="LP">LP</option>
+                      <option value="MP">MP</option>
+                      <option value="HP">HP</option>
+                      <option value="DMG">DMG</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleAddAll}
+                  disabled={saving || queue.some(q => q.type === 'sell' && !q.price)}
+                  className="flex-1 bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-colors cursor-pointer"
+                >
+                  {saving ? 'Salvando...' : `Adicionar ${queue.length > 1 ? `${queue.length} cartas` : 'carta'}`}
+                </button>
+                <button
+                  onClick={() => setQueue([])}
+                  className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer"
+                >
+                  Limpar
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -314,80 +403,24 @@ const Search = () => {
             </section>
           )}
 
-          {/* Queue */}
-          {queue.length > 0 && (
-            <section className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-              <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-4">Cartas selecionadas</h2>
-              <div className="flex flex-col gap-2">
-                {queue.map(({ card, price, quantity, type, condition }) => (
-                  <div key={card.id} className="flex flex-col gap-2 border-b border-[#2a2a2a] pb-3 last:border-0 last:pb-0">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm font-semibold text-[#f0f0f0]">{card.name}</span>
-                        <span className="text-xs text-[#555] mx-1">·</span>
-                        <span className="text-xs text-[#888]">{card.set.id.toUpperCase()} #{card.localId}</span>
-                      </div>
-                      <button onClick={() => handleQueueRemove(card.id)} className="text-xs text-[#555] hover:text-[#e3350d] cursor-pointer">✕</button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => handleQueueUpdate(card.id, 'type', 'sell')}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}
-                      >Vendo</button>
-                      <button
-                        onClick={() => handleQueueUpdate(card.id, 'type', 'want')}
-                        className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}
-                      >Procuro</button>
-                      <input
-                        type="number"
-                        placeholder={type === 'sell' ? 'R$' : 'Até R$'}
-                        value={price}
-                        onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)}
-                        min="0"
-                        step="0.01"
-                        className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Qtd"
-                        value={quantity}
-                        onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)}
-                        min="1"
-                        className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]"
-                      />
-                      <select
-                        value={condition}
-                        onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)}
-                        className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
-                      >
-                        <option value="M">M</option>
-                        <option value="NM">NM</option>
-                        <option value="LP">LP</option>
-                        <option value="MP">MP</option>
-                        <option value="HP">HP</option>
-                        <option value="DMG">DMG</option>
-                      </select>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-3 mt-4">
-                <button
-                  onClick={handleAddAll}
-                  disabled={saving || queue.some(q => q.type === 'sell' && !q.price)}
-                  className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-6 py-2.5 text-sm transition-colors cursor-pointer"
-                >
-                  {saving ? 'Salvando...' : `Adicionar ${queue.length > 1 ? `${queue.length} cartas` : 'carta'}`}
-                </button>
-                <button onClick={() => setQueue([])} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer">
-                  Limpar
-                </button>
-              </div>
-            </section>
-          )}
-
         </div>
       </div>
+
+      {/* Botão flutuante */}
+      {queue.length > 0 && (
+        <div className="fixed bottom-6 left-0 right-0 flex justify-center px-6 z-30">
+          <button
+            onClick={() => setQueueDrawerOpen(true)}
+            className="bg-[#e3350d] hover:bg-[#c42d0b] text-white font-semibold rounded-xl px-8 py-4 shadow-lg transition-colors flex items-center gap-3 cursor-pointer"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+            Confirmar seleção ({queue.length} {queue.length === 1 ? 'carta' : 'cartas'})
+          </button>
+        </div>
+      )}
     </div>
   );
 };
