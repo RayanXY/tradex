@@ -31,18 +31,19 @@ const Search = () => {
   const { user } = useAuth();
   const { results, loading: searching, error, search, clear } = usePokemonSearch();
 
-  const [query, setQuery] = useState('');
-  const [queue, setQueue] = useState<QueuedCard[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [inventory, setInventory] = useState<DashboardCard[]>([]);
-  const [sets, setSets] = useState<SetItem[]>([]);
-  const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
-  const [loadingSet, setLoadingSet] = useState(false);
-  const [setResults, setSetResults] = useState<PokemonCard[]>([]);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [query, setQuery] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [sets, setSets] = useState<SetItem[]>([]);
+  const [loadingSet, setLoadingSet] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [queue, setQueue] = useState<QueuedCard[]>([]);
+  const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
+  const [inventory, setInventory] = useState<DashboardCard[]>([]);
+  const [setResults, setSetResults] = useState<PokemonCard[]>([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
@@ -120,7 +121,16 @@ const Search = () => {
 
   const allResults = isSetSearch ? setResults : results;
   const totalPages = isSetSearch ? 1 : Math.ceil(allResults.length / pageSize);
-  const displayResults = isSetSearch ? allResults : allResults.slice((page - 1) * pageSize, page * pageSize);
+
+  const sortedResults = [...allResults].sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'number') return a.localId.localeCompare(b.localId, undefined, { numeric: true });
+    const dateA = sets.find(s => s.id === a.set.id)?.release_date ?? '';
+    const dateB = sets.find(s => s.id === b.set.id)?.release_date ?? '';
+    return dateB.localeCompare(dateA);
+  });
+
+  const displayResults = isSetSearch  ? sortedResults : sortedResults.slice((page - 1) * pageSize, page * pageSize);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,6 +332,21 @@ const Search = () => {
             </form>
             {error && <p className="text-sm text-[#e3350d] mt-2">{error}</p>}
           </section>
+
+          {allResults.length > 0 && !isSetSearch && (
+            <div className="flex items-center gap-2 my-3">
+              <span className="text-xs text-[#555]">Ordenar:</span>
+              <select
+                value={sortBy}
+                onChange={e => { setSortBy(e.target.value as typeof sortBy); setPage(1); }}
+                className="bg-[#1a1a1a] border border-[#2a2a2a] rounded px-3 py-1.5 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+              >
+                <option value="recent">Mais recente</option>
+                <option value="name">Nome A→Z</option>
+                <option value="number">Número</option>
+              </select>
+            </div>
+          )}
 
           {(displayResults.length > 0 || loadingSet || searching) && (
             <section className="mb-6">
