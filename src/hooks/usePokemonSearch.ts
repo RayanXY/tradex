@@ -14,7 +14,6 @@ export interface PokemonCard {
 }
 
 const BASE_URL = "https://api.tcgdex.net/v2/en";
-const PAGE_SIZE = 24;
 
 let validSetIds: Set<string> | null = null;
 
@@ -28,16 +27,13 @@ const usePokemonSearch = () => {
   const [results, setResults] = useState<PokemonCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [currentQuery, setCurrentQuery] = useState('');
 
-  const search = async (query: string, pageNum = 1) => {
+  const search = async (query: string) => {
     if (!query.trimStart()) return;
 
     setLoading(true);
     setError(null);
-    if (pageNum === 1) setResults([]);
+    setResults([]);
 
     await loadValidSets();
 
@@ -101,27 +97,36 @@ const usePokemonSearch = () => {
 
         cards = cards.filter(c => c.image);
       } else {
-        const res = await fetch(
-          `${BASE_URL}/cards?name=${encodeURIComponent(trimmed)}&pagination:itemsPerPage=${PAGE_SIZE}&pagination:page=${pageNum}`
-        );
-        const data = await res.json();
-        const raw = Array.isArray(data) ? data : [];
-        const mapped = raw
-          .filter((card: any) => card.image)
-          .map((card: any) => ({
-            id: card.id,
-            name: card.name,
-            localId: card.localId,
-            image: card.image ?? '',
-            set: {
-              id: card.set?.id ?? card.id.split('-')[0],
-              name: card.set?.name ?? '',
-              ptcgo_code: null,
-            },
-          }));
+        let allCards: PokemonCard[] = [];
+        let currentPage = 1;
+        let keepFetching = true;
 
-        cards = pageNum === 1 ? mapped : [...results, ...mapped];
-        setHasMore(raw.length === PAGE_SIZE);
+        while (keepFetching) {
+          const res = await fetch(
+            `${BASE_URL}/cards?name=${encodeURIComponent(trimmed)}&pagination:itemsPerPage=50&pagination:page=${currentPage}`
+          );
+          const data = await res.json();
+          const raw = Array.isArray(data) ? data : [];
+          const mapped = raw
+            .filter((card: any) => card.image)
+            .map((card: any) => ({
+              id: card.id,
+              name: card.name,
+              localId: card.localId,
+              image: card.image ?? '',
+              set: {
+                id: card.set?.id ?? card.id.split('-')[0],
+                name: card.set?.name ?? '',
+                ptcgo_code: null,
+              },
+            }));
+
+          allCards = [...allCards, ...mapped];
+          keepFetching = raw.length === 50;
+          currentPage++;
+        }
+
+        cards = allCards;
       }
 
       cards = cards.filter(c => validSetIds?.has(c.set.id) ?? true);
@@ -130,8 +135,6 @@ const usePokemonSearch = () => {
         setError('Nenhuma carta encontrada.');
       } else {
         setResults(cards);
-        setPage(pageNum);
-        setCurrentQuery(query);
       }
     } catch {
       setError('Erro ao buscar cartas.');
@@ -140,20 +143,11 @@ const usePokemonSearch = () => {
     }
   };
 
-  const loadMore = () => search(currentQuery, page + 1);
-
   const clear = () => {
     setResults([]);
-    setPage(1);
-    setHasMore(false);
-    setCurrentQuery('');
   };
 
-  const invalidateSetCache = () => {
-    validSetIds = null;
-  };
-
-  return { results, loading, error, hasMore, search, loadMore, clear, invalidateSetCache };
+  return { results, loading, error, search, clear };
 };
 
 export const invalidateSetCache = () => {

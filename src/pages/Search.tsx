@@ -29,18 +29,26 @@ interface SetItem {
 
 const Search = () => {
   const { user } = useAuth();
-  const { results, loading: searching, error, hasMore, search, loadMore, clear } = usePokemonSearch();
+  const { results, loading: searching, error, search, clear } = usePokemonSearch();
 
   const [query, setQuery] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [sets, setSets] = useState<SetItem[]>([]);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [loadingSet, setLoadingSet] = useState(false);
   const [queue, setQueue] = useState<QueuedCard[]>([]);
-  const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
-  const [setResults, setSetResults] = useState<PokemonCard[]>([]);
+  const [saving, setSaving] = useState(false);
   const [inventory, setInventory] = useState<DashboardCard[]>([]);
+  const [sets, setSets] = useState<SetItem[]>([]);
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
+  const [loadingSet, setLoadingSet] = useState(false);
+  const [setResults, setSetResults] = useState<PokemonCard[]>([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -61,16 +69,14 @@ const Search = () => {
   }, []);
 
   const seriesWithDate = [...new Set(
-    sets
-      .filter(s => s.release_date)
+    sets.filter(s => s.release_date)
       .sort((a, b) => (b.release_date ?? '').localeCompare(a.release_date ?? ''))
       .map(s => s.serie)
   )];
   const seriesWithoutDate = [...new Set(
     sets.filter(s => !s.release_date).map(s => s.serie)
   )].filter(s => !seriesWithDate.includes(s));
-  const seriesOrder = [...seriesWithDate, ...seriesWithoutDate]
-    .filter(s => s !== 'Other');
+  const seriesOrder = [...seriesWithDate, ...seriesWithoutDate].filter(s => s !== 'Other');
   seriesOrder.push('Other');
 
   const toggleSerie = (serie: string) => {
@@ -86,6 +92,7 @@ const Search = () => {
     setDrawerOpen(false);
     clear();
     setQuery('');
+    setPage(1);
 
     const res = await fetch(`https://api.tcgdex.net/v2/en/cards?set.id=${setId}&pagination:itemsPerPage=250`);
     const data = await res.json();
@@ -108,11 +115,17 @@ const Search = () => {
     setLoadingSet(false);
   };
 
-  const displayResults = query.trim() ? results : setResults;
+  const pageSize = isMobile ? 12 : 20;
+  const isSetSearch = setResults.length > 0 && !query.trim();
+
+  const allResults = isSetSearch ? setResults : results;
+  const totalPages = isSetSearch ? 1 : Math.ceil(allResults.length / pageSize);
+  const displayResults = isSetSearch ? allResults : allResults.slice((page - 1) * pageSize, page * pageSize);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setSetResults([]);
+    setPage(1);
     search(query);
   };
 
@@ -164,6 +177,29 @@ const Search = () => {
     setSaving(false);
   };
 
+  const Pagination = ({ current, total, onChange }: { current: number, total: number, onChange: (p: number) => void }) => {
+    if (total <= 1) return null;
+    return (
+      <div className="flex items-center justify-center gap-2 mt-6">
+        <button
+          onClick={() => { onChange(Math.max(1, current - 1)); window.scrollTo(0, 0); }}
+          disabled={current === 1}
+          className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
+        >
+          ← Anterior
+        </button>
+        <span className="text-sm text-[#555]">{current} / {total}</span>
+        <button
+          onClick={() => { onChange(Math.min(total, current + 1)); window.scrollTo(0, 0); }}
+          disabled={current === total}
+          className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
+        >
+          Próxima →
+        </button>
+      </div>
+    );
+  };
+
   const SidebarContent = () => (
     <div className="flex flex-col gap-1">
       {seriesOrder.map(serie => (
@@ -200,31 +236,23 @@ const Search = () => {
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
       <Navbar />
 
-      {/* Overlays */}
       {(drawerOpen || queueDrawerOpen) && (
-        <div
-          className="fixed inset-0 bg-black/60 z-40"
-          onClick={() => { setDrawerOpen(false); setQueueDrawerOpen(false); }}
-        />
+        <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { setDrawerOpen(false); setQueueDrawerOpen(false); }} />
       )}
 
-      {/* Sets drawer (esquerda) */}
+      {/* Sets drawer */}
       <div className={`fixed top-0 left-0 h-full w-72 bg-[#111] border-r border-[#2a2a2a] z-50 transform transition-transform duration-300 overflow-y-auto md:hidden ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Sets</h2>
           <button onClick={() => setDrawerOpen(false)} className="text-[#555] hover:text-[#f0f0f0] cursor-pointer text-lg">✕</button>
         </div>
-        <div className="p-3">
-          <SidebarContent />
-        </div>
+        <div className="p-3"><SidebarContent /></div>
       </div>
 
-      {/* Queue drawer (direita) */}
+      {/* Queue drawer */}
       <div className={`fixed top-0 right-0 h-full w-full max-w-sm bg-[#111] border-l border-[#2a2a2a] z-50 transform transition-transform duration-300 overflow-y-auto ${queueDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
-          <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">
-            Selecionadas ({queue.length})
-          </h2>
+          <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Selecionadas ({queue.length})</h2>
           <button onClick={() => setQueueDrawerOpen(false)} className="text-[#555] hover:text-[#f0f0f0] cursor-pointer text-lg">✕</button>
         </div>
         <div className="p-4 flex flex-col gap-3">
@@ -243,36 +271,11 @@ const Search = () => {
                     <button onClick={() => handleQueueRemove(card.id)} className="text-xs text-[#555] hover:text-[#e3350d] cursor-pointer">✕</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleQueueUpdate(card.id, 'type', 'sell')}
-                      className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}
-                    >Vendo</button>
-                    <button
-                      onClick={() => handleQueueUpdate(card.id, 'type', 'want')}
-                      className={`px-2.5 py-1 rounded text-xs font-semibold transition-colors cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}
-                    >Procuro</button>
-                    <input
-                      type="number"
-                      placeholder={type === 'sell' ? 'R$' : 'Até R$'}
-                      value={price}
-                      onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)}
-                      min="0"
-                      step="0.01"
-                      className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Qtd"
-                      value={quantity}
-                      onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)}
-                      min="1"
-                      className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]"
-                    />
-                    <select
-                      value={condition}
-                      onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)}
-                      className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
-                    >
+                    <button onClick={() => handleQueueUpdate(card.id, 'type', 'sell')} className={`px-2.5 py-1 rounded text-xs font-semibold cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Vendo</button>
+                    <button onClick={() => handleQueueUpdate(card.id, 'type', 'want')} className={`px-2.5 py-1 rounded text-xs font-semibold cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Procuro</button>
+                    <input type="number" placeholder={type === 'sell' ? 'R$' : 'Até R$'} value={price} onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)} min="0" step="0.01" className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
+                    <input type="number" placeholder="Qtd" value={quantity} onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)} min="1" className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
+                    <select value={condition} onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
                       <option value="M">M</option>
                       <option value="NM">NM</option>
                       <option value="LP">LP</option>
@@ -284,19 +287,10 @@ const Search = () => {
                 </div>
               ))}
               <div className="flex gap-3 pt-2">
-                <button
-                  onClick={handleAddAll}
-                  disabled={saving || queue.some(q => q.type === 'sell' && !q.price)}
-                  className="flex-1 bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-2.5 text-sm transition-colors cursor-pointer"
-                >
+                <button onClick={handleAddAll} disabled={saving || queue.some(q => q.type === 'sell' && !q.price)} className="flex-1 bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-2.5 text-sm cursor-pointer">
                   {saving ? 'Salvando...' : `Adicionar ${queue.length > 1 ? `${queue.length} cartas` : 'carta'}`}
                 </button>
-                <button
-                  onClick={() => setQueue([])}
-                  className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer"
-                >
-                  Limpar
-                </button>
+                <button onClick={() => setQueue([])} className="text-sm text-[#888] hover:text-[#f0f0f0] cursor-pointer">Limpar</button>
               </div>
             </>
           )}
@@ -305,25 +299,16 @@ const Search = () => {
 
       <div className="max-w-6xl mx-auto px-4 py-6 md:flex md:gap-6">
 
-        {/* Desktop sidebar */}
         <aside className="hidden md:block w-56 shrink-0">
           <h2 className="text-xs font-semibold text-[#888] uppercase tracking-wider mb-3">Sets</h2>
           <SidebarContent />
         </aside>
 
-        {/* Main content */}
         <div className="flex-1 min-w-0">
 
-          {/* Search bar */}
           <section className="mb-6">
             <form onSubmit={handleSearch} className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(true)}
-                className="md:hidden bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#e3350d] rounded-lg px-4 py-3 text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer shrink-0"
-              >
-                ☰
-              </button>
+              <button type="button" onClick={() => setDrawerOpen(true)} className="md:hidden bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#e3350d] rounded-lg px-4 py-3 text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer shrink-0">☰</button>
               <input
                 type="text"
                 placeholder="Nome (ex: Charizard) ou Set+Número (ex: MEG 001)"
@@ -331,22 +316,20 @@ const Search = () => {
                 onChange={e => setQuery(e.target.value)}
                 className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
               />
-              <button
-                type="submit"
-                disabled={searching}
-                className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-3 text-sm transition-colors cursor-pointer shrink-0"
-              >
+              <button type="submit" disabled={searching} className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-3 text-sm cursor-pointer shrink-0">
                 {searching ? '...' : '🔍'}
               </button>
             </form>
             {error && <p className="text-sm text-[#e3350d] mt-2">{error}</p>}
           </section>
 
-          {/* Results */}
-          {(displayResults.length > 0 || loadingSet) && (
+          {(displayResults.length > 0 || loadingSet || searching) && (
             <section className="mb-6">
               <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">
-                {loadingSet ? 'Carregando...' : `Resultados (${displayResults.length}${hasMore ? '+' : ''})`}
+                {loadingSet || searching
+                  ? 'Carregando...'
+                  : `Resultados (${allResults.length})${totalPages > 1 ? ` — página ${page} de ${totalPages}` : ''}`
+                }
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
                 {displayResults.map(card => {
@@ -389,16 +372,8 @@ const Search = () => {
                 })}
               </div>
 
-              {hasMore && query.trim() && (
-                <div className="flex justify-center mt-4">
-                  <button
-                    onClick={loadMore}
-                    disabled={searching}
-                    className="text-sm text-[#888] hover:text-[#f0f0f0] border border-[#2a2a2a] hover:border-[#444] rounded-lg px-5 py-2 transition-colors disabled:opacity-50 cursor-pointer"
-                  >
-                    {searching ? 'Carregando...' : 'Carregar mais'}
-                  </button>
-                </div>
+              {!isSetSearch && totalPages > 1 && (
+                <Pagination current={page} total={totalPages} onChange={p => setPage(p)} />
               )}
             </section>
           )}
@@ -406,7 +381,6 @@ const Search = () => {
         </div>
       </div>
 
-      {/* Botão flutuante */}
       {queue.length > 0 && (
         <div className="fixed bottom-6 left-0 right-0 flex justify-center px-6 z-30">
           <button
