@@ -24,7 +24,10 @@ interface SetItem {
   name: string,
   serie: string,
   release_date: string | null,
-  ptcgo_code: string | null
+  ptcgo_code: string | null,
+  logo_url: string,
+  total?: number | null,
+  official_count?: number | null
 }
 
 const Search = () => {
@@ -43,6 +46,7 @@ const Search = () => {
   const [setResults, setSetResults] = useState<PokemonCard[]>([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
+  const [selectedSet, setSelectedSet] = useState<SetItem | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
 
   useEffect(() => {
@@ -64,7 +68,7 @@ const Search = () => {
   useEffect(() => {
     supabase
       .from('sets')
-      .select('id, name, serie, release_date, ptcgo_code')
+      .select('id, name, serie, release_date, ptcgo_code, logo_url, official_count, total')
       .order('release_date', { ascending: false, nullsFirst: false })
       .then(({ data }) => setSets(data ?? []));
   }, []);
@@ -94,6 +98,7 @@ const Search = () => {
     clear();
     setQuery('');
     setPage(1);
+    setSelectedSet(sets.find(s => s.id === setId) ?? null);
 
     const res = await fetch(`https://api.tcgdex.net/v2/en/cards?set.id=${setId}&pagination:itemsPerPage=250`);
     const data = await res.json();
@@ -230,7 +235,11 @@ const Search = () => {
                   <button
                     key={set.id}
                     onClick={() => handleSetClick(set.id)}
-                    className="text-left px-3 py-1.5 rounded text-xs text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a] transition-colors cursor-pointer"
+                    className={`text-left px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                      selectedSet?.id === set.id
+                        ? 'text-[#f0f0f0] bg-[#2a2a2a]'
+                        : 'text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a]'
+                    }`}
                   >
                     {set.name}
                   </button>
@@ -348,14 +357,35 @@ const Search = () => {
             </div>
           )}
 
+          {isSetSearch && selectedSet && (
+            <div className="flex items-center gap-4 mb-6 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
+              {selectedSet.logo_url ? (
+                <img src={selectedSet.logo_url} alt={selectedSet.name} className="h-10 object-contain" />
+              ) : (
+                <div className="h-10 w-24 bg-[#2a2a2a] rounded" />
+              )}
+              <div>
+                <p className="font-semibold text-[#f0f0f0]">{selectedSet.name}</p>
+                <p className="text-xs text-[#888]">
+                  {selectedSet.release_date ?? 'Data desconhecida'} · {selectedSet.official_count ?? '?'} cartas base · {selectedSet.total ?? setResults.length} total
+                </p>
+              </div>
+            </div>
+          )}
+
           {(displayResults.length > 0 || loadingSet || searching) && (
             <section className="mb-6">
-              <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">
-                {loadingSet || searching
-                  ? 'Carregando...'
-                  : `Resultados (${allResults.length})${totalPages > 1 ? ` — página ${page} de ${totalPages}` : ''}`
-                }
-              </h2>
+              {(!isSetSearch) && (
+                <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">
+                  {loadingSet || searching
+                    ? 'Carregando...'
+                    : `Resultados (${allResults.length})${totalPages > 1 ? ` — página ${page} de ${totalPages}` : ''}`
+                  }
+                </h2>
+              )}
+              {(loadingSet || searching) && (
+                <p className="text-sm text-[#555] mb-3">Carregando...</p>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
                 {displayResults.map(card => {
                   const inQueue = queue.some(q => q.card.id === card.id);
