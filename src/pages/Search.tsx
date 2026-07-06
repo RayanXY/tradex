@@ -65,10 +65,9 @@ const Search = () => {
       .sort((a, b) => (b.release_date ?? '').localeCompare(a.release_date ?? ''))
       .map(s => s.serie)
   )];
-  const seriesWithoutDate = [...new Set(
-    sets.filter(s => !s.release_date).map(s => s.serie)
-  )].filter(s => !seriesWithDate.includes(s));
-  const seriesOrder = [...seriesWithDate, ...seriesWithoutDate];
+  const seriesWithoutDate = [...new Set(sets.filter(s => !s.release_date).map(s => s.serie))].filter(s => !seriesWithDate.includes(s));
+  const seriesOrder = [...seriesWithDate, ...seriesWithoutDate].filter(s => s !== 'Other');
+  seriesOrder.push('Other');
 
   const toggleSerie = (serie: string) => {
     setOpenSeries(prev => {
