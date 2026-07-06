@@ -253,7 +253,7 @@ const Search = () => {
                         {inSell ? '● Vendo' : inWant ? '● Procuro' : (
                           <>
                             <span>{card.name}</span>
-                            <span>{(card.set.ptcgo_code ?? card.set.id).toUpperCase()} · #{card.localId}</span>
+                            {(sets.find(s => s.id === card.set.id)?.ptcgo_code ?? card.set.id).toUpperCase()} #{card.localId}
                           </>
                         )}
                       </div>
