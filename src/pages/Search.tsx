@@ -121,7 +121,7 @@ const Search = () => {
     setLoadingSet(false);
   };
 
-  const pageSize = isMobile ? 12 : 20;
+  const pageSize = 20;
   const isSetSearch = setResults.length > 0 && !query.trim();
 
   const allResults = isSetSearch ? setResults : results;
