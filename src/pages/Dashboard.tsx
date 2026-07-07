@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import CardImage from '../components/CardImage'
 import Navbar from '../components/Navbar'
+import ReactCountryFlag from 'react-country-flag'
 
 interface DashboardCard {
   id: string,
@@ -15,7 +16,8 @@ interface DashboardCard {
   quantity: number,
   active: boolean,
   type: 'sell' | 'want',
-  condition: string
+  condition: string,
+  language: string
 }
 
 const CARDS_PER_PAGE = 12;
@@ -28,6 +30,12 @@ const conditionColor: Record<string, { bg: string, text: string, border: string 
   MP:  { bg: '#facc15', text: '#000', border: '#ca8a04' },
   HP:  { bg: '#f97316', text: '#000', border: '#c2410c' },
   DMG: { bg: '#ef4444', text: '#fff', border: '#b91c1c' },
+};
+
+const languageCountry: Record<string, string> = {
+  BR: 'BR',
+  EN: 'US',
+  JP: 'JP',
 };
 
 const Dashboard = () => {
@@ -129,6 +137,15 @@ const Dashboard = () => {
               <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[11px] font-bold px-1.5 py-0.5 rounded">
                 x{card.quantity}
               </div>
+              {card.language && (
+                <div className="absolute -bottom-2 -left-2 w-5 h-4 border border-[#0f0f0f] overflow-hidden flex items-center justify-center bg-black">
+                  <ReactCountryFlag
+                    countryCode={languageCountry[card.language] ?? 'BR'}
+                    svg
+                    style={{ width: '2em', height: '2em' }}
+                  />
+                </div>
+              )}
             </div>
             <div>
               <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
@@ -213,7 +230,6 @@ const Dashboard = () => {
             </>
           )}
         </section>
-
       </main>
     </div>
   );

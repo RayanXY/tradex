@@ -16,7 +16,8 @@ interface QueuedCard {
   price: string,
   quantity: string,
   type: 'sell' | 'want',
-  condition: string
+  condition: string,
+  language: string,
 }
 
 interface SetItem {
@@ -44,16 +45,18 @@ const Search = () => {
   const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
   const [inventory, setInventory] = useState<DashboardCard[]>([]);
   const [setResults, setSetResults] = useState<PokemonCard[]>([]);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  //const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
   const [selectedSet, setSelectedSet] = useState<SetItem | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
 
+  /*
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  */
 
   useEffect(() => {
     if (!user) return;
@@ -149,10 +152,10 @@ const Search = () => {
       setQueue(prev => prev.filter(q => q.card.id !== card.id));
       return;
     }
-    setQueue(prev => [...prev, { card, price: '', quantity: '1', type: 'sell', condition: 'NM' }]);
+    setQueue(prev => [...prev, { card, price: '', quantity: '1', type: 'sell', condition: 'NM', language: 'BR' }]);
   };
 
-  const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type' | 'condition', value: string) => {
+  const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type' | 'condition' | 'language', value: string) => {
     setQueue(prev => prev.map(q => {
       if (q.card.id !== cardId) return q;
       const updated = { ...q, [field]: value };
@@ -183,6 +186,7 @@ const Search = () => {
       active: true,
       type: q.type,
       condition: q.condition,
+      language: q.language
     }));
 
     const { data, error: supabaseError } = await supabase.from('cards').insert(rows).select();
@@ -283,7 +287,7 @@ const Search = () => {
             <p className="text-sm text-[#555]">Nenhuma carta selecionada.</p>
           ) : (
             <>
-              {queue.map(({ card, price, quantity, type, condition }) => (
+              {queue.map(({ card, price, quantity, type, condition, language }) => (
                 <div key={card.id} className="flex flex-col gap-2 border-b border-[#2a2a2a] pb-3 last:border-0 last:pb-0">
                   <div className="flex items-center justify-between">
                     <div>
@@ -308,6 +312,15 @@ const Search = () => {
                       <option value="MP">MP</option>
                       <option value="HP">HP</option>
                       <option value="DMG">DMG</option>
+                    </select>
+                    <select
+                      value={language}
+                      onChange={e => handleQueueUpdate(card.id, 'language', e.target.value)}
+                      className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+                    >
+                      <option value="BR">BR</option>
+                      <option value="EN">EN</option>
+                      <option value="JP">JP</option>
                     </select>
                   </div>
                 </div>
@@ -439,7 +452,6 @@ const Search = () => {
               )}
             </section>
           )}
-
         </div>
       </div>
 
