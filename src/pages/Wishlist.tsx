@@ -22,6 +22,7 @@ interface Card {
 }
 
 const conditionColor: Record<string, { bg: string, text: string, border: string }> = {
+  ANY: { bg: '#fff', text: '#888', border: '#444' },
   M:   { bg: '#ffd700', text: '#000', border: '#b8960c' },
   NM:  { bg: '#22c55e', text: '#000', border: '#15803d' },
   LP:  { bg: '#86efac', text: '#000', border: '#16a34a' },
@@ -198,7 +199,7 @@ const Wishlist = () => {
                         style={{ backgroundColor: conditionColor[card.condition]?.bg ?? '#22c55e', borderColor: conditionColor[card.condition]?.border ?? '#15803d', color: conditionColor[card.condition]?.text ?? '#000' }}
                         className="absolute -top-2 -left-2 border-2 text-[10px] font-bold px-1.5 py-0.5 rounded"
                       >
-                        {card.condition ?? 'NM'}
+                        {card.condition === 'ANY' ? '?' : card.condition ?? 'NM'}
                       </div>
                       <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
                         x{card.quantity}

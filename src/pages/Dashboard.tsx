@@ -21,6 +21,7 @@ interface DashboardCard {
 const CARDS_PER_PAGE = 12;
 
 const conditionColor: Record<string, { bg: string, text: string, border: string }> = {
+  ANY: { bg: '#fff', text: '#888', border: '#444' },
   M:   { bg: '#ffd700', text: '#000', border: '#b8960c' },
   NM:  { bg: '#22c55e', text: '#000', border: '#15803d' },
   LP:  { bg: '#86efac', text: '#000', border: '#16a34a' },
@@ -123,7 +124,7 @@ const Dashboard = () => {
                 style={{ backgroundColor: c.bg, borderColor: c.border, color: c.text }}
                 className="absolute -top-2 -left-2 border-2 text-[10px] font-bold px-1.5 py-0.5 rounded"
               >
-                {card.condition}
+                {card.condition === 'ANY' ? '?' : card.condition}
               </div>
               <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[11px] font-bold px-1.5 py-0.5 rounded">
                 x{card.quantity}

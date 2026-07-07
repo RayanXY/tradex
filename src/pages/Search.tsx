@@ -153,9 +153,13 @@ const Search = () => {
   };
 
   const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type' | 'condition', value: string) => {
-    setQueue(prev => prev.map(q =>
-      q.card.id === cardId ? { ...q, [field]: value } : q
-    ));
+    setQueue(prev => prev.map(q => {
+      if (q.card.id !== cardId) return q;
+      const updated = { ...q, [field]: value };
+      if (field === 'type' && value === 'want') updated.condition = 'ANY';
+      if (field === 'type' && value === 'sell' && q.condition === 'ANY') updated.condition = 'NM';
+      return updated;
+    }));
   };
 
   const handleQueueRemove = (cardId: string) => {
@@ -295,6 +299,9 @@ const Search = () => {
                     <input type="number" placeholder={type === 'sell' ? 'R$' : 'Até R$'} value={price} onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)} min="0" step="0.01" className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
                     <input type="number" placeholder="Qtd" value={quantity} onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)} min="1" className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
                     <select value={condition} onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                      {type === 'want' && (
+                        <option value="ANY">?</option>
+                      )}
                       <option value="M">M</option>
                       <option value="NM">NM</option>
                       <option value="LP">LP</option>
