@@ -5,31 +5,14 @@ import Navbar from '../components/Navbar'
 import { supabase } from '../lib/supabase'
 import CardImage from '../components/CardImage'
 import { conditionColor, languageCountry } from '../constants/cards'
-
-interface Seller {
-  id: string,
-  name: string,
-  phone: string
-}
-
-interface Card {
-  id: string,
-  name: string,
-  set_name: string,
-  image_url: string,
-  price: number | null,
-  quantity: number,
-  type: 'sell' | 'want',
-  condition: string,
-  language: string
-}
+import type { Seller, TradexCard } from '../types'
 
 const CARDS_PER_PAGE = 12;
 
 const Wishlist = () => {
   const { phone } = useParams<{ phone: string }>();
   const [seller, setSeller] = useState<Seller | null>(null);
-  const [wanting, setWanting] = useState<Card[]>([]);
+  const [wanting, setWanting] = useState<TradexCard[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);

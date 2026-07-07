@@ -4,12 +4,7 @@ import { supabase } from '../lib/supabase'
 import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
 import CardImage from '../components/CardImage'
 import Navbar from '../components/Navbar'
-
-interface DashboardCard {
-  id: string,
-  tcg_card_id: string,
-  type: 'sell' | 'want'
-}
+import type { SetItem, TradexCard } from '../types'
 
 interface QueuedCard {
   card: PokemonCard,
@@ -20,16 +15,7 @@ interface QueuedCard {
   language: string,
 }
 
-interface SetItem {
-  id: string,
-  name: string,
-  serie: string,
-  release_date: string | null,
-  ptcgo_code: string | null,
-  logo_url: string,
-  total?: number | null,
-  official_count?: number | null
-}
+type InventoryCard = Pick<TradexCard, 'id' | 'tcg_card_id' | 'type'>;
 
 const Search = () => {
   const { user } = useAuth();
@@ -43,7 +29,7 @@ const Search = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [queue, setQueue] = useState<QueuedCard[]>([]);
   const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
-  const [inventory, setInventory] = useState<DashboardCard[]>([]);
+  const [inventory, setInventory] = useState<InventoryCard[]>([]);
   const [setResults, setSetResults] = useState<PokemonCard[]>([]);
   //const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());

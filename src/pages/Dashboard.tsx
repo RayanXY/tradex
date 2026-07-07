@@ -9,20 +9,7 @@ import useLongPress from '../hooks/useLongPress'
 import { useAuth } from '../contexts/AuthContext'
 import type { CardModalData } from '../components/CardModal'
 import { conditionColor, languageCountry } from '../constants/cards'
-
-interface DashboardCard {
-  id: string,
-  tcg_card_id: string,
-  name: string,
-  set_name: string,
-  image_url: string,
-  price: number | null,
-  quantity: number,
-  active: boolean,
-  type: 'sell' | 'want',
-  condition: string,
-  language: string
-}
+import type { TradexCard } from '../types'
 
 const CARDS_PER_PAGE = 12;
 
@@ -33,8 +20,8 @@ const Dashboard = () => {
   const [wantPage, setWantPage] = useState(1);
   const [sellTotal, setSellTotal] = useState(0);
   const [wantTotal, setWantTotal] = useState(0);
-  const [selling, setSelling] = useState<DashboardCard[]>([]);
-  const [wanting, setWanting] = useState<DashboardCard[]>([]);
+  const [selling, setSelling] = useState<TradexCard[]>([]);
+  const [wanting, setWanting] = useState<TradexCard[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [modalCard, setModalCard] = useState<CardModalData | null>(null);
 
@@ -106,7 +93,7 @@ const Dashboard = () => {
     ) : null
   );
 
-  const CardGrid = ({ cards, type }: { cards: DashboardCard[], type: 'sell' | 'want' }) => (
+  const CardGrid = ({ cards, type }: { cards: TradexCard[], type: 'sell' | 'want' }) => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
       {cards.map(card => {
         const c = conditionColor[card.condition] ?? conditionColor['NM'];
