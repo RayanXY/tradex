@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import CardImage from '../components/CardImage'
-import Navbar from '../components/Navbar'
+import { useEffect, useState } from 'react'
 import ReactCountryFlag from 'react-country-flag'
+import Navbar from '../components/Navbar'
+import { supabase } from '../lib/supabase'
+import CardModal from '../components/CardModal'
+import CardImage from '../components/CardImage'
+import useLongPress from '../hooks/useLongPress'
+import { useAuth } from '../contexts/AuthContext'
+import type { CardModalData } from '../components/CardModal'
+import { conditionColor, languageCountry } from '../constants/cards'
 
 interface DashboardCard {
   id: string,
@@ -22,32 +26,17 @@ interface DashboardCard {
 
 const CARDS_PER_PAGE = 12;
 
-const conditionColor: Record<string, { bg: string, text: string, border: string }> = {
-  ANY: { bg: '#fff', text: '#888', border: '#444' },
-  M:   { bg: '#ffd700', text: '#000', border: '#b8960c' },
-  NM:  { bg: '#22c55e', text: '#000', border: '#15803d' },
-  LP:  { bg: '#86efac', text: '#000', border: '#16a34a' },
-  MP:  { bg: '#facc15', text: '#000', border: '#ca8a04' },
-  HP:  { bg: '#f97316', text: '#000', border: '#c2410c' },
-  DMG: { bg: '#ef4444', text: '#fff', border: '#b91c1c' },
-};
-
-const languageCountry: Record<string, string> = {
-  BR: 'BR',
-  EN: 'US',
-  JP: 'JP',
-};
-
 const Dashboard = () => {
   const { user } = useAuth();
 
-  const [selling, setSelling] = useState<DashboardCard[]>([]);
-  const [wanting, setWanting] = useState<DashboardCard[]>([]);
-  const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [sellPage, setSellPage] = useState(1);
   const [wantPage, setWantPage] = useState(1);
   const [sellTotal, setSellTotal] = useState(0);
   const [wantTotal, setWantTotal] = useState(0);
+  const [selling, setSelling] = useState<DashboardCard[]>([]);
+  const [wanting, setWanting] = useState<DashboardCard[]>([]);
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
+  const [modalCard, setModalCard] = useState<CardModalData | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -121,12 +110,28 @@ const Dashboard = () => {
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
       {cards.map(card => {
         const c = conditionColor[card.condition] ?? conditionColor['NM'];
+        const longPress = useLongPress(() => setModalCard({
+          name: card.name,
+          set_name: card.set_name,
+          image_url: card.image_url,
+          price: card.price,
+          quantity: card.quantity,
+          condition: card.condition,
+          language: card.language,
+          type,
+        }));
         return (
           <div
             key={card.id}
             className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 flex flex-col gap-2"
           >
-            <div className="relative">
+            <div className="relative" {...longPress}>
+              <button
+                onClick={e => { e.stopPropagation(); setModalCard({ name: card.name, set_name: card.set_name, image_url: card.image_url, price: card.price, quantity: card.quantity, condition: card.condition, language: card.language, type }); }}
+                className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center hover:bg-black cursor-pointer"
+              >
+                ⓘ
+              </button>
               <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
               <div
                 style={{ backgroundColor: c.bg, borderColor: c.border, color: c.text }}
@@ -174,6 +179,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
       <Navbar />
+
+      <CardModal card={modalCard} onClose={() => setModalCard(null)} />
 
       <main className="max-w-4xl mx-auto px-6 py-8">
 
