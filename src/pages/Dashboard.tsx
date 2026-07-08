@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import type { CardModalData } from '../components/CardModal'
 import { conditionColor, languageCountry } from '../constants/cards'
 import type { TradexCard } from '../types'
+import Pagination from '../components/ui/Pagination'
 
 const CARDS_PER_PAGE = 12;
 
@@ -70,28 +71,6 @@ const Dashboard = () => {
 
   const sellTotalPages = Math.ceil(sellTotal / CARDS_PER_PAGE);
   const wantTotalPages = Math.ceil(wantTotal / CARDS_PER_PAGE);
-
-  const Pagination = ({ page, totalPages, setPage }: { page: number, totalPages: number, setPage: (p: number) => void }) => (
-    totalPages > 1 ? (
-      <div className="flex items-center justify-center gap-2 mt-6">
-        <button
-          onClick={() => setPage(Math.max(1, page - 1))}
-          disabled={page === 1}
-          className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
-        >
-          ← Anterior
-        </button>
-        <span className="text-sm text-[#555]">{page} / {totalPages}</span>
-        <button
-          onClick={() => setPage(Math.min(totalPages, page + 1))}
-          disabled={page === totalPages}
-          className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
-        >
-          Próxima →
-        </button>
-      </div>
-    ) : null
-  );
 
   const CardGrid = ({ cards, type }: { cards: TradexCard[], type: 'sell' | 'want' }) => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -198,7 +177,7 @@ const Dashboard = () => {
           ) : (
             <>
               <CardGrid cards={selling} type="sell" />
-              <Pagination page={sellPage} totalPages={sellTotalPages} setPage={setSellPage} />
+              <Pagination current={sellPage} total={sellTotalPages} onChange={setSellPage} />
             </>
           )}
         </section>
@@ -220,7 +199,7 @@ const Dashboard = () => {
           ) : (
             <>
               <CardGrid cards={wanting} type="want" />
-              <Pagination page={wantPage} totalPages={wantTotalPages} setPage={setWantPage} />
+              <Pagination current={wantPage} total={wantTotalPages} onChange={setWantPage} />
             </>
           )}
         </section>

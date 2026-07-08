@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import CardImage from '../components/CardImage'
 import { conditionColor, languageCountry } from '../constants/cards'
 import type { Seller, TradexCard } from '../types'
+import Pagination from '../components/ui/Pagination'
 
 const CARDS_PER_PAGE = 12;
 
@@ -207,26 +208,7 @@ const Showcase = () => {
                 })}
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
-                  >
-                    ← Anterior
-                  </button>
-                  <span className="text-sm text-[#555]">{page} / {totalPages}</span>
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
-                  >
-                    Próxima →
-                  </button>
-                </div>
-              )}
+              <Pagination current={page} total={totalPages} onChange={setPage} />
             </>
           )}
         </section>

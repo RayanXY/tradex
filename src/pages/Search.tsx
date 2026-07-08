@@ -5,6 +5,7 @@ import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
 import CardImage from '../components/CardImage'
 import Navbar from '../components/Navbar'
 import type { SetItem, TradexCard } from '../types'
+import Pagination from '../components/ui/Pagination'
 
 interface QueuedCard {
   card: PokemonCard,
@@ -31,18 +32,9 @@ const Search = () => {
   const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
   const [inventory, setInventory] = useState<InventoryCard[]>([]);
   const [setResults, setSetResults] = useState<PokemonCard[]>([]);
-  //const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
   const [selectedSet, setSelectedSet] = useState<SetItem | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
-
-  /*
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  */
 
   useEffect(() => {
     if (!user) return;
@@ -184,29 +176,6 @@ const Search = () => {
     }
 
     setSaving(false);
-  };
-
-  const Pagination = ({ current, total, onChange }: { current: number, total: number, onChange: (p: number) => void }) => {
-    if (total <= 1) return null;
-    return (
-      <div className="flex items-center justify-center gap-2 mt-6">
-        <button
-          onClick={() => { onChange(Math.max(1, current - 1)); window.scrollTo(0, 0); }}
-          disabled={current === 1}
-          className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
-        >
-          ← Anterior
-        </button>
-        <span className="text-sm text-[#555]">{current} / {total}</span>
-        <button
-          onClick={() => { onChange(Math.min(total, current + 1)); window.scrollTo(0, 0); }}
-          disabled={current === total}
-          className="px-4 py-2 rounded-lg text-sm border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] hover:border-[#444] disabled:opacity-30 transition-colors cursor-pointer"
-        >
-          Próxima →
-        </button>
-      </div>
-    );
   };
 
   const SidebarContent = () => (
@@ -433,8 +402,8 @@ const Search = () => {
                 })}
               </div>
 
-              {!isSetSearch && totalPages > 1 && (
-                <Pagination current={page} total={totalPages} onChange={p => setPage(p)} />
+              {!isSetSearch && (
+                <Pagination current={page} total={totalPages} onChange={setPage} />
               )}
             </section>
           )}
