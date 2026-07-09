@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import Navbar from '../components/Navbar'
+import Navbar from '../components/layout/Navbar'
 import CardItem from '../components/cards/CardItem'
 import Pagination from '../components/ui/Pagination'
 import CardModal from '../components/cards/CardModal'

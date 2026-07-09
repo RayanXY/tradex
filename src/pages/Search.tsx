@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import Navbar from '../components/Navbar'
+import Navbar from '../components/layout/Navbar'
 import Pagination from '../components/ui/Pagination'
 import CardImage from '../components/cards/CardImage'
 import type { SetItem, TradexCard } from '../types'

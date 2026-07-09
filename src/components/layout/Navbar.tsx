@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import Pokeball from './ui/Pokeball';
+import Pokeball from '../ui/Pokeball';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Navbar = () => {
   const { user, logout } = useAuth();

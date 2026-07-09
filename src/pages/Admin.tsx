@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import Navbar from '../components/Navbar'
-import Tabs from '../components/Tabs'
+import Navbar from '../components/layout/Navbar'
+import Tabs from '../components/ui/Tabs'
 
 interface SetItem {
   id: string,

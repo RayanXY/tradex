@@ -8,8 +8,8 @@ import Register from './pages/Register'
 import Showcase from './pages/Showcase'
 import Wishlist from './pages/Wishlist'
 import Dashboard from './pages/Dashboard'
-import AdminRoute from './components/AdminRoute'
-import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/routes/AdminRoute'
+import ProtectedRoute from './components/routes/ProtectedRoute'
 
 const App = () => {
   return (
