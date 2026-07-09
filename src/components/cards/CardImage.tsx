@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface CardImageProps {
   src: string,
@@ -8,6 +8,10 @@ interface CardImageProps {
 
 const CardImage = ({ src, alt, className = '' }: CardImageProps) => {
   const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setLoaded(false);
+  }, [src]);
 
   return (
     <div className="relative w-full">
@@ -19,6 +23,7 @@ const CardImage = ({ src, alt, className = '' }: CardImageProps) => {
         />
       )}
       <img
+        key={src}
         src={src}
         alt={alt}
         onLoad={() => setLoaded(true)}

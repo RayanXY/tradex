@@ -1,20 +1,10 @@
 import { useEffect } from 'react'
+import type { TradexCard } from '../../types'
 import ReactCountryFlag from 'react-country-flag'
-import { conditionColor, languageCountry } from '../constants/cards'
-
-export interface CardModalData {
-  name: string,
-  set_name: string,
-  image_url: string,
-  price: number | null,
-  quantity: number,
-  condition: string,
-  language: string,
-  type: 'sell' | 'want'
-}
+import { conditionColor, languageCountry } from '../../constants/cards'
 
 interface CardModalProps {
-  card: CardModalData | null,
+  card: TradexCard | null,
   onClose: () => void
 }
 
@@ -36,14 +26,12 @@ const CardModal = ({ card, onClose }: CardModalProps) => {
         className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl max-w-sm w-full p-6 flex flex-col items-center gap-4"
         onClick={e => e.stopPropagation()}
       >
-        {/* Imagem */}
         <img
           src={card.image_url.replace('/low.webp', '/high.webp')}
           alt={card.name}
           className="w-48 rounded-xl shadow-lg"
         />
 
-        {/* Info */}
         <div className="w-full flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div>
@@ -56,23 +44,19 @@ const CardModal = ({ card, onClose }: CardModalProps) => {
           </div>
 
           <div className="flex items-center gap-3 mt-1">
-            {/* Condição */}
             <div style={{ backgroundColor: c.bg, color: c.text }} className="text-xs font-bold px-2 py-1 rounded">
               {card.condition === 'ANY' ? '?' : card.condition}
             </div>
 
-            {/* Língua */}
             <div className="w-5 h-4 border border-[#0f0f0f] overflow-hidden flex items-center justify-center bg-black">
               <ReactCountryFlag countryCode={languageCountry[card.language] ?? 'BR'} svg style={{ width: '2em', height: '2em' }} />
             </div>
 
-            {/* Quantidade */}
             <div className="bg-white border-2 border-black text-black text-xs font-bold px-1.5 py-0.5 rounded">
               x{card.quantity}
             </div>
           </div>
 
-          {/* Preço */}
           <div className="mt-2">
             {card.price != null
               ? <p className="text-xl font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>

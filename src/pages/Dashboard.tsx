@@ -1,30 +1,26 @@
-import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import ReactCountryFlag from 'react-country-flag'
-import Navbar from '../components/Navbar'
-import { supabase } from '../lib/supabase'
-import CardModal from '../components/CardModal'
-import CardImage from '../components/CardImage'
-import useLongPress from '../hooks/useLongPress'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import type { CardModalData } from '../components/CardModal'
-import { conditionColor, languageCountry } from '../constants/cards'
-import type { TradexCard } from '../types'
+import { supabase } from '../lib/supabase'
+import Navbar from '../components/Navbar'
 import Pagination from '../components/ui/Pagination'
+import CardItem from '../components/cards/CardItem'
+import CardModal from '../components/cards/CardModal'
+import type { TradexCard } from '../types'
 
 const CARDS_PER_PAGE = 12;
 
 const Dashboard = () => {
   const { user } = useAuth();
 
+  const [selling, setSelling] = useState<TradexCard[]>([]);
+  const [wanting, setWanting] = useState<TradexCard[]>([]);
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [sellPage, setSellPage] = useState(1);
   const [wantPage, setWantPage] = useState(1);
   const [sellTotal, setSellTotal] = useState(0);
   const [wantTotal, setWantTotal] = useState(0);
-  const [selling, setSelling] = useState<TradexCard[]>([]);
-  const [wanting, setWanting] = useState<TradexCard[]>([]);
-  const [loadingDashboard, setLoadingDashboard] = useState(true);
-  const [modalCard, setModalCard] = useState<CardModalData | null>(null);
+  const [modalCard, setModalCard] = useState<TradexCard | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -72,81 +68,9 @@ const Dashboard = () => {
   const sellTotalPages = Math.ceil(sellTotal / CARDS_PER_PAGE);
   const wantTotalPages = Math.ceil(wantTotal / CARDS_PER_PAGE);
 
-  const CardGrid = ({ cards, type }: { cards: TradexCard[], type: 'sell' | 'want' }) => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      {cards.map(card => {
-        const c = conditionColor[card.condition] ?? conditionColor['NM'];
-        const longPress = useLongPress(() => setModalCard({
-          name: card.name,
-          set_name: card.set_name,
-          image_url: card.image_url,
-          price: card.price,
-          quantity: card.quantity,
-          condition: card.condition,
-          language: card.language,
-          type,
-        }));
-        return (
-          <div
-            key={card.id}
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 flex flex-col gap-2"
-          >
-            <div className="relative" {...longPress}>
-              <button
-                onClick={e => { e.stopPropagation(); setModalCard({ name: card.name, set_name: card.set_name, image_url: card.image_url, price: card.price, quantity: card.quantity, condition: card.condition, language: card.language, type }); }}
-                className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center hover:bg-black cursor-pointer"
-              >
-                ⓘ
-              </button>
-              <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
-              <div
-                style={{ backgroundColor: c.bg, borderColor: c.border, color: c.text }}
-                className="absolute -top-2 -left-2 border-2 text-[10px] font-bold px-1.5 py-0.5 rounded"
-              >
-                {card.condition === 'ANY' ? '?' : card.condition}
-              </div>
-              <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[11px] font-bold px-1.5 py-0.5 rounded">
-                x{card.quantity}
-              </div>
-              {card.language && (
-                <div className="absolute -bottom-2 -left-2 w-5 h-4 border border-[#0f0f0f] overflow-hidden flex items-center justify-center bg-black">
-                  <ReactCountryFlag
-                    countryCode={languageCountry[card.language] ?? 'BR'}
-                    svg
-                    style={{ width: '2em', height: '2em' }}
-                  />
-                </div>
-              )}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
-              <p className="text-xs text-[#888]">{card.set_name}</p>
-            </div>
-            <div className="flex items-center justify-between mt-auto">
-              <div>
-                {card.price != null
-                  ? <p className="text-sm font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
-                  : <p className="text-sm text-[#555]">Valor a negociar</p>
-                }
-              </div>
-              <button
-                onClick={() => handleRemove(card.id, type)}
-                className="text-xs text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
-              >
-                Remover
-              </button>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
       <Navbar />
-
-      <CardModal card={modalCard} onClose={() => setModalCard(null)} />
 
       <main className="max-w-4xl mx-auto px-6 py-8">
 
@@ -176,7 +100,16 @@ const Dashboard = () => {
             <p className="text-sm text-[#555]">Nenhuma carta adicionada ainda.</p>
           ) : (
             <>
-              <CardGrid cards={selling} type="sell" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {selling.map(card => (
+                  <CardItem
+                    key={card.id}
+                    card={card}
+                    onOpenModal={setModalCard}
+                    onRemove={() => handleRemove(card.id, 'sell')}
+                  />
+                ))}
+              </div>
               <Pagination current={sellPage} total={sellTotalPages} onChange={setSellPage} />
             </>
           )}
@@ -198,12 +131,24 @@ const Dashboard = () => {
             <p className="text-sm text-[#555]">Nenhuma carta na lista ainda.</p>
           ) : (
             <>
-              <CardGrid cards={wanting} type="want" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {wanting.map(card => (
+                  <CardItem
+                    key={card.id}
+                    card={card}
+                    onOpenModal={setModalCard}
+                    onRemove={() => handleRemove(card.id, 'want')}
+                  />
+                ))}
+              </div>
               <Pagination current={wantPage} total={wantTotalPages} onChange={setWantPage} />
             </>
           )}
         </section>
+
       </main>
+
+      <CardModal card={modalCard} onClose={() => setModalCard(null)} />
     </div>
   );
 };
