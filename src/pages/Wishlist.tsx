@@ -1,24 +1,24 @@
+import { supabase } from '../lib/supabase'
 import { useState, useEffect } from 'react'
-import ReactCountryFlag from 'react-country-flag'
 import { useParams, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import { supabase } from '../lib/supabase'
-import CardImage from '../components/cards/CardImage'
-import { conditionColor, languageCountry } from '../constants/cards'
-import type { Seller, TradexCard } from '../types'
+import CardItem from '../components/cards/CardItem'
 import Pagination from '../components/ui/Pagination'
+import CardModal from '../components/cards/CardModal'
+import type { TradexCard, Seller } from '../types'
 
 const CARDS_PER_PAGE = 12;
 
 const Wishlist = () => {
-  const { phone } = useParams<{ phone: string }>();
-  const [seller, setSeller] = useState<Seller | null>(null);
-  const [wanting, setWanting] = useState<TradexCard[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const { phone } = useParams<{ phone: string }>();
+  const [wanting, setWanting] = useState<TradexCard[]>([]);
+  const [seller, setSeller] = useState<Seller | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [modalCard, setModalCard] = useState<TradexCard | null>(null);
 
   useEffect(() => {
     const loadSeller = async () => {
@@ -35,25 +35,6 @@ const Wishlist = () => {
       }
 
       setSeller(userData);
-
-      document.title = `${userData.name} — Procuro | Tradex`
-
-      const setMeta = (property: string, content: string) => {
-        let el = document.querySelector(`meta[property="${property}"]`);
-        if (!el) {
-          el = document.createElement('meta');
-          el.setAttribute('property', property);
-          document.head.appendChild(el);
-        }
-        el.setAttribute('content', content);
-      }
-
-      const origin = window.location.origin;
-      setMeta('og:title', `${userData.name} está procurando cartas no Tradex`);
-      setMeta('og:description', `Veja a lista de busca de ${userData.name} e ofereça suas cartas pelo WhatsApp.`);
-      setMeta('og:image', `${origin}/api/og?slug=${userData.slug}&type=want`);
-      setMeta('og:url', `${origin}/u/${userData.slug}/procuro`);
-      setMeta('og:type', 'website');
 
       const { count } = await supabase
         .from('cards')
@@ -85,7 +66,7 @@ const Wishlist = () => {
         .range(from, to);
 
       setWanting(data ?? []);
-    };
+    }
 
     loadCards();
   }, [seller, page]);
@@ -98,7 +79,7 @@ const Wishlist = () => {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  };
+  }
 
   const handleContact = () => {
     if (!seller || selected.size === 0) return;
@@ -111,14 +92,14 @@ const Wishlist = () => {
     const message = `Olá ${seller.name}! Tenho as seguintes cartas que você procura:\n\n${list}`;
     const url = `https://wa.me/55${seller.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
-  };
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
         <p className="text-[#555] text-sm">Carregando...</p>
       </div>
-    );
+    )
   }
 
   if (notFound) {
@@ -126,7 +107,7 @@ const Wishlist = () => {
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
         <p className="text-[#555] text-sm">Usuário não encontrado.</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -153,59 +134,18 @@ const Wishlist = () => {
           <>
             <p className="text-xs text-[#555] mb-4">Selecione as cartas que você tem e clique em "Oferecer".</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {wanting.map(card => {
-                const isSelected = selected.has(card.id);
-                return (
-                  <button
-                    key={card.id}
-                    onClick={() => toggleSelect(card.id)}
-                    className={`flex flex-col gap-2 p-3 rounded-xl border transition-colors text-left cursor-pointer ${
-                      isSelected
-                        ? 'border-[#3b82f6] bg-[#1a1a1a]'
-                        : 'border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#444]'
-                    }`}
-                  >
-                    <div className="relative">
-                      <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#3b82f6] flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">✓</span>
-                        </div>
-                      )}
-                      <div
-                        style={{ backgroundColor: conditionColor[card.condition]?.bg ?? '#22c55e', borderColor: conditionColor[card.condition]?.border ?? '#15803d', color: conditionColor[card.condition]?.text ?? '#000' }}
-                        className="absolute -top-2 -left-2 border-2 text-[10px] font-bold px-1.5 py-0.5 rounded"
-                      >
-                        {card.condition === 'ANY' ? '?' : card.condition ?? 'NM'}
-                      </div>
-                      <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
-                        x{card.quantity}
-                      </div>
-                      {card.language && (
-                        <div className="absolute -bottom-2 -left-2 w-5 h-4 border border-[#0f0f0f] overflow-hidden flex items-center justify-center bg-black">
-                          <ReactCountryFlag
-                            countryCode={languageCountry[card.language] ?? 'BR'}
-                            svg
-                            style={{ width: '2em', height: '2em' }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
-                      <p className="text-xs text-[#888]">{card.set_name}</p>
-                    </div>
-                    <div className="mt-auto">
-                      {card.price != null
-                        ? <p className="text-sm font-bold text-[#3b82f6]">Paga até R$ {card.price.toFixed(2)}</p>
-                        : <p className="text-sm text-[#555]">Valor a negociar</p>
-                      }
-                    </div>
-                  </button>
-                );
-              })}
+              {wanting.map(card => (
+                <CardItem
+                  key={card.id}
+                  card={card}
+                  onOpenModal={setModalCard}
+                  selectable
+                  isSelected={selected.has(card.id)}
+                  onToggleSelect={() => toggleSelect(card.id)}
+                  selectColor="#3b82f6"
+                />
+              ))}
             </div>
-
             <Pagination current={page} total={totalPages} onChange={setPage} />
           </>
         )}
@@ -224,8 +164,10 @@ const Wishlist = () => {
           </button>
         </div>
       )}
+
+      <CardModal card={modalCard} onClose={() => setModalCard(null)} />
     </div>
-  );
-};
+  )
+}
 
 export default Wishlist

@@ -1,24 +1,24 @@
+import { supabase } from '../lib/supabase'
 import { useState, useEffect } from 'react'
-import ReactCountryFlag from 'react-country-flag'
 import { Link, useParams } from 'react-router-dom'
 import Navbar from '../components/Navbar'
-import { supabase } from '../lib/supabase'
-import CardImage from '../components/cards/CardImage'
-import { conditionColor, languageCountry } from '../constants/cards'
-import type { Seller, TradexCard } from '../types'
+import CardItem from '../components/cards/CardItem'
 import Pagination from '../components/ui/Pagination'
+import CardModal from '../components/cards/CardModal'
+import type { TradexCard, Seller } from '../types'
 
 const CARDS_PER_PAGE = 12;
 
 const Showcase = () => {
-  const { phone } = useParams<{ phone: string }>();
-  const [seller, setSeller] = useState<Seller | null>(null);
-  const [selling, setSelling] = useState<TradexCard[]>([]);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const { phone } = useParams<{ phone: string }>();
+  const [selling, setSelling] = useState<TradexCard[]>([]);
+  const [seller, setSeller] = useState<Seller | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [modalCard, setModalCard] = useState<TradexCard | null>(null);
 
   useEffect(() => {
     const loadSeller = async () => {
@@ -31,29 +31,10 @@ const Showcase = () => {
       if (!userData) {
         setNotFound(true);
         setLoading(false);
-        return
+        return;
       }
 
       setSeller(userData);
-
-      document.title = `${userData.name} — Vendo | Tradex`;
-
-      const setMeta = (property: string, content: string) => {
-        let el = document.querySelector(`meta[property="${property}"]`);
-        if (!el) {
-          el = document.createElement('meta');
-          el.setAttribute('property', property);
-          document.head.appendChild(el);
-        }
-        el.setAttribute('content', content);
-      }
-
-      const origin = window.location.origin;
-      setMeta('og:title', `${userData.name} está vendendo cartas no Tradex`);
-      setMeta('og:description', `Veja o mostruário de ${userData.name} e entre em contato pelo WhatsApp.`);
-      setMeta('og:image', `${origin}/api/og?slug=${userData.slug}&type=sell`);
-      setMeta('og:url', `${origin}/u/${userData.slug}`);
-      setMeta('og:type', 'website');
 
       const { count } = await supabase
         .from('cards')
@@ -70,7 +51,7 @@ const Showcase = () => {
   }, [phone]);
 
   useEffect(() => {
-    if (!seller) return
+    if (!seller) return;
 
     const loadCards = async () => {
       const from = (page - 1) * CARDS_PER_PAGE;
@@ -96,12 +77,12 @@ const Showcase = () => {
     setSelected(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      return next
-    })
+      return next;
+    });
   }
 
   const handleContact = () => {
-    if (!seller || selected.size === 0) return
+    if (!seller || selected.size === 0) return;
 
     const selectedCards = selling.filter(c => selected.has(c.id));
     const list = selectedCards
@@ -155,59 +136,18 @@ const Showcase = () => {
             <>
               <p className="text-xs text-[#555] mb-4">Selecione as cartas de interesse e clique em "Contatar".</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {selling.map(card => {
-                  const isSelected = selected.has(card.id)
-                  return (
-                    <button
-                      key={card.id}
-                      onClick={() => toggleSelect(card.id)}
-                      className={`flex flex-col gap-2 p-3 rounded-xl border transition-colors text-left cursor-pointer ${
-                        isSelected
-                          ? 'border-[#e3350d] bg-[#1a1a1a]'
-                          : 'border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#444]'
-                      }`}
-                    >
-                      <div className="relative">
-                        <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-[#e3350d] flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">✓</span>
-                          </div>
-                        )}
-                        <div
-                          style={{ backgroundColor: conditionColor[card.condition]?.bg ?? '#22c55e', borderColor: conditionColor[card.condition]?.border ?? '#15803d', color: conditionColor[card.condition]?.text ?? '#000' }}
-                          className="absolute -top-2 -left-2 border-2 text-[10px] font-bold px-1.5 py-0.5 rounded"
-                        >
-                          {card.condition === 'ANY' ? '?' : card.condition ?? 'NM'}
-                        </div>
-                        <div className="absolute -bottom-2 -right-2 bg-white border-2 border-black text-black text-[10px] font-bold px-1.5 py-0.5 rounded">
-                          x{card.quantity}
-                        </div>
-                        {card.language && (
-                          <div className="absolute -bottom-2 -left-2 w-5 h-4 border border-[#0f0f0f] overflow-hidden flex items-center justify-center bg-black">
-                            <ReactCountryFlag
-                              countryCode={languageCountry[card.language] ?? 'BR'}
-                              svg
-                              style={{ width: '2em', height: '2em' }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
-                        <p className="text-xs text-[#888]">{card.set_name}</p>
-                      </div>
-                      <div className="mt-auto">
-                        {card.price != null
-                          ? <p className="text-sm font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
-                          : <p className="text-sm text-[#555]">A negociar</p>
-                        }
-                      </div>
-                    </button>
-                  )
-                })}
+                {selling.map(card => (
+                  <CardItem
+                    key={card.id}
+                    card={card}
+                    onOpenModal={setModalCard}
+                    selectable
+                    isSelected={selected.has(card.id)}
+                    onToggleSelect={() => toggleSelect(card.id)}
+                    selectColor="#e3350d"
+                  />
+                ))}
               </div>
-
               <Pagination current={page} total={totalPages} onChange={setPage} />
             </>
           )}
@@ -227,6 +167,8 @@ const Showcase = () => {
           </button>
         </div>
       )}
+
+      <CardModal card={modalCard} onClose={() => setModalCard(null)} />
     </div>
   )
 }
