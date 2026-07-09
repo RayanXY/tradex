@@ -1,11 +1,12 @@
+import { supabase } from '../lib/supabase'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
-import CardImage from '../components/cards/CardImage'
 import Navbar from '../components/Navbar'
-import type { SetItem, TradexCard } from '../types'
 import Pagination from '../components/ui/Pagination'
+import CardImage from '../components/cards/CardImage'
+import type { SetItem, TradexCard } from '../types'
+import useSets from '../hooks/useSets'
+import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
 
 interface QueuedCard {
   card: PokemonCard,
@@ -13,7 +14,7 @@ interface QueuedCard {
   quantity: string,
   type: 'sell' | 'want',
   condition: string,
-  language: string,
+  language: string
 }
 
 type InventoryCard = Pick<TradexCard, 'id' | 'tcg_card_id' | 'type'>;
@@ -25,7 +26,6 @@ const Search = () => {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
   const [saving, setSaving] = useState(false);
-  const [sets, setSets] = useState<SetItem[]>([]);
   const [loadingSet, setLoadingSet] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [queue, setQueue] = useState<QueuedCard[]>([]);
@@ -35,6 +35,8 @@ const Search = () => {
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
   const [selectedSet, setSelectedSet] = useState<SetItem | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
+
+  const { sets, seriesOrder, setsBySerie } = useSets();
 
   useEffect(() => {
     if (!user) return;
@@ -46,32 +48,13 @@ const Search = () => {
       .then(({ data }) => setInventory(data ?? []));
   }, [user]);
 
-  useEffect(() => {
-    supabase
-      .from('sets')
-      .select('id, name, serie, release_date, ptcgo_code, logo_url, official_count, total')
-      .order('release_date', { ascending: false, nullsFirst: false })
-      .then(({ data }) => setSets(data ?? []));
-  }, []);
-
-  const seriesWithDate = [...new Set(
-    sets.filter(s => s.release_date)
-      .sort((a, b) => (b.release_date ?? '').localeCompare(a.release_date ?? ''))
-      .map(s => s.serie)
-  )];
-  const seriesWithoutDate = [...new Set(
-    sets.filter(s => !s.release_date).map(s => s.serie)
-  )].filter(s => !seriesWithDate.includes(s));
-  const seriesOrder = [...seriesWithDate, ...seriesWithoutDate].filter(s => s !== 'Other');
-  seriesOrder.push('Other');
-
   const toggleSerie = (serie: string) => {
     setOpenSeries(prev => {
       const next = new Set(prev);
       next.has(serie) ? next.delete(serie) : next.add(serie);
       return next;
     });
-  };
+  }
 
   const handleSetClick = async (setId: string) => {
     setLoadingSet(true);
@@ -100,7 +83,7 @@ const Search = () => {
       },
     })));
     setLoadingSet(false);
-  };
+  }
 
   const pageSize = 20;
   const isSetSearch = setResults.length > 0 && !query.trim();
@@ -123,7 +106,7 @@ const Search = () => {
     setSetResults([]);
     setPage(1);
     search(query);
-  };
+  }
 
   const handleSelectCard = (card: PokemonCard) => {
     if (queue.some(q => q.card.id === card.id)) {
@@ -131,7 +114,7 @@ const Search = () => {
       return;
     }
     setQueue(prev => [...prev, { card, price: '', quantity: '1', type: 'sell', condition: 'NM', language: 'BR' }]);
-  };
+  }
 
   const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type' | 'condition' | 'language', value: string) => {
     setQueue(prev => prev.map(q => {
@@ -141,11 +124,11 @@ const Search = () => {
       if (field === 'type' && value === 'sell' && q.condition === 'ANY') updated.condition = 'NM';
       return updated;
     }));
-  };
+  }
 
   const handleQueueRemove = (cardId: string) => {
     setQueue(prev => prev.filter(q => q.card.id !== cardId));
-  };
+  }
 
   const handleAddAll = async () => {
     if (!user || queue.length === 0) return;
@@ -176,7 +159,7 @@ const Search = () => {
     }
 
     setSaving(false);
-  };
+  }
 
   const SidebarContent = () => (
     <div className="flex flex-col gap-1">
@@ -191,22 +174,19 @@ const Search = () => {
           </button>
           {openSeries.has(serie) && (
             <div className="ml-3 flex flex-col gap-0.5 mb-1">
-              {sets
-                .filter(s => s.serie === serie)
-                .sort((a, b) => (b.release_date ?? '').localeCompare(a.release_date ?? ''))
-                .map(set => (
-                  <button
-                    key={set.id}
-                    onClick={() => handleSetClick(set.id)}
-                    className={`text-left px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
-                      selectedSet?.id === set.id
-                        ? 'text-[#f0f0f0] bg-[#2a2a2a]'
-                        : 'text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a]'
-                    }`}
-                  >
-                    {set.name}
-                  </button>
-                ))}
+              {setsBySerie(serie).map(set => (
+                <button
+                  key={set.id}
+                  onClick={() => handleSetClick(set.id)}
+                  className={`text-left px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                    selectedSet?.id === set.id
+                      ? 'text-[#f0f0f0] bg-[#2a2a2a]'
+                      : 'text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a]'
+                  }`}
+                >
+                  {set.name}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -425,7 +405,7 @@ const Search = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
 export default Search
