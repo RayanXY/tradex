@@ -78,7 +78,7 @@ const CardItem = ({
         </div>
         {onRemove && (
           <button
-            onClick={e => { e.stopPropagation(); onRemove(); }}
+            onClick={e => { e.stopPropagation(); onOpenModal(card); }}
             className="text-xs text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
           >
             Remover
