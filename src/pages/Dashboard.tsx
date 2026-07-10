@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import Navbar from '../components/layout/Navbar'
@@ -22,51 +22,70 @@ const Dashboard = () => {
   const [wantTotal, setWantTotal] = useState(0);
   const [modalCard, setModalCard] = useState<TradexCard | null>(null);
 
-  useEffect(() => {
+  const loadCounts = useCallback(async () => {
     if (!user) return;
+    const [{ count: sellCount }, { count: wantCount }] = await Promise.all([
+      supabase.from('cards').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('active', true).eq('type', 'sell'),
+      supabase.from('cards').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('active', true).eq('type', 'want'),
+    ]);
+    setSellTotal(sellCount ?? 0);
+    setWantTotal(wantCount ?? 0);
+    setLoadingDashboard(false);
+  }, [user])
 
-    const loadCounts = async () => {
-      const [{ count: sellCount }, { count: wantCount }] = await Promise.all([
-        supabase.from('cards').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('active', true).eq('type', 'sell'),
-        supabase.from('cards').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('active', true).eq('type', 'want'),
-      ]);
-      setSellTotal(sellCount ?? 0);
-      setWantTotal(wantCount ?? 0);
-      setLoadingDashboard(false);
-    };
-
-    loadCounts();
-  }, [user]);
-
-  useEffect(() => {
+  const loadSelling = useCallback(async () => {
     if (!user) return;
     const from = (sellPage - 1) * CARDS_PER_PAGE;
     const to = from + CARDS_PER_PAGE - 1;
-    supabase.from('cards').select('*').eq('user_id', user.id).eq('active', true).eq('type', 'sell').range(from, to)
-      .then(({ data }) => setSelling(data ?? []));
-  }, [user, sellPage]);
+    const { data } = await supabase
+      .from('cards').select('*')
+      .eq('user_id', user.id).eq('active', true).eq('type', 'sell')
+      .range(from, to);
+    setSelling(data ?? []);
+  }, [user, sellPage])
 
-  useEffect(() => {
+  const loadWanting = useCallback(async () => {
     if (!user) return;
     const from = (wantPage - 1) * CARDS_PER_PAGE;
     const to = from + CARDS_PER_PAGE - 1;
-    supabase.from('cards').select('*').eq('user_id', user.id).eq('active', true).eq('type', 'want').range(from, to)
-      .then(({ data }) => setWanting(data ?? []));
-  }, [user, wantPage]);
+    const { data } = await supabase
+      .from('cards').select('*')
+      .eq('user_id', user.id).eq('active', true).eq('type', 'want')
+      .range(from, to);
+    setWanting(data ?? []);
+  }, [user, wantPage])
 
-  const handleRemove = async (id: string, type: 'sell' | 'want') => {
-    await supabase.from('cards').update({ active: false }).eq('id', id);
-    if (type === 'sell') {
-      setSelling(prev => prev.filter(c => c.id !== id));
-      setSellTotal(prev => prev - 1);
-    } else {
-      setWanting(prev => prev.filter(c => c.id !== id));
-      setWantTotal(prev => prev - 1);
-    }
-  };
+  useEffect(() => { loadCounts(); }, [loadCounts]);
+  useEffect(() => { loadSelling(); }, [loadSelling]);
+  useEffect(() => { loadWanting(); }, [loadWanting]);
 
   const sellTotalPages = Math.ceil(sellTotal / CARDS_PER_PAGE);
   const wantTotalPages = Math.ceil(wantTotal / CARDS_PER_PAGE);
+
+  const handleRemove = async (id: string, type: 'sell' | 'want') => {
+    await supabase.from('cards').update({ active: false }).eq('id', id);
+
+    if (type === 'sell') {
+      const newTotal = sellTotal - 1;
+      setSellTotal(newTotal);
+      // Se a página atual ficou além do novo total, volta uma página
+      const newTotalPages = Math.ceil(newTotal / CARDS_PER_PAGE);
+      if (sellPage > newTotalPages && newTotalPages > 0) {
+        setSellPage(newTotalPages);
+      } else {
+        loadSelling();
+      }
+    } else {
+      const newTotal = wantTotal - 1;
+      setWantTotal(newTotal);
+      const newTotalPages = Math.ceil(newTotal / CARDS_PER_PAGE);
+      if (wantPage > newTotalPages && newTotalPages > 0) {
+        setWantPage(newTotalPages);
+      } else {
+        loadWanting();
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
