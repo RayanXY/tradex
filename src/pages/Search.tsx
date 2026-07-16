@@ -14,7 +14,8 @@ interface QueuedCard {
   quantity: string,
   type: 'sell' | 'want',
   condition: string,
-  language: string
+  language: string,
+  rarity: string | null
 }
 
 type InventoryCard = Pick<TradexCard, 'id' | 'tcg_card_id' | 'type'>;
@@ -108,12 +109,32 @@ const Search = () => {
     search(query);
   }
 
-  const handleSelectCard = (card: PokemonCard) => {
+  const handleSelectCard = async (card: PokemonCard) => {
     if (queue.some(q => q.card.id === card.id)) {
       setQueue(prev => prev.filter(q => q.card.id !== card.id));
       return;
     }
-    setQueue(prev => [...prev, { card, price: '', quantity: '1', type: 'sell', condition: 'NM', language: 'BR' }]);
+    setQueue(prev => [...prev, {
+      card,
+      price: '',
+      quantity: '1',
+      type: 'sell',
+      condition: 'NM',
+      language: 'BR',
+      rarity: null
+    }]);
+
+    try {
+      const res = await fetch(`https://api.tcgdex.net/v2/en/cards/${card.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setQueue(prev => prev.map(q =>
+          q.card.id === card.id ? { ...q, rarity: data.rarity ?? null } : q
+        ));
+      }
+    } catch {
+      //
+    }
   }
 
   const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type' | 'condition' | 'language', value: string) => {
@@ -147,7 +168,8 @@ const Search = () => {
       active: true,
       type: q.type,
       condition: q.condition,
-      language: q.language
+      language: q.language,
+      rarity: q.rarity
     }));
 
     const { data, error: supabaseError } = await supabase.from('cards').insert(rows).select();

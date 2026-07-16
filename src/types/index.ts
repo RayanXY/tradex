@@ -10,13 +10,14 @@ export interface TradexCard {
   type: 'sell' | 'want',
   condition: string,
   language: string,
+  rarity?: string | null
 }
 
 export interface Seller {
   id: string,
   name: string,
   phone: string,
-  slug: string,
+  slug: string
 }
 
 export interface SetItem {
@@ -27,5 +28,5 @@ export interface SetItem {
   ptcgo_code: string | null,
   logo_url?: string | null,
   total?: number | null,
-  official_count?: number | null,
+  official_count?: number | null
 }
