@@ -68,7 +68,6 @@ const Dashboard = () => {
     if (type === 'sell') {
       const newTotal = sellTotal - 1;
       setSellTotal(newTotal);
-      // Se a página atual ficou além do novo total, volta uma página
       const newTotalPages = Math.ceil(newTotal / CARDS_PER_PAGE);
       if (sellPage > newTotalPages && newTotalPages > 0) {
         setSellPage(newTotalPages);
