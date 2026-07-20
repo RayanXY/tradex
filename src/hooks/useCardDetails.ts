@@ -25,6 +25,10 @@ export interface CardDetails {
     type: string,
     value: string,
   }[],
+  resistances?: {
+    type: string,
+    value: string,
+  }[],
   set?: {
     id: string,
     name: string,

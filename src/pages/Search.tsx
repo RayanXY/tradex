@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import Navbar from '../components/layout/Navbar'
 import Pagination from '../components/ui/Pagination'
+import CardModal from '../components/cards/CardModal'
 import CardImage from '../components/cards/CardImage'
 import type { SetItem, TradexCard } from '../types'
 import useSets from '../hooks/useSets'
@@ -35,7 +36,9 @@ const Search = () => {
   const [setResults, setSetResults] = useState<PokemonCard[]>([]);
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
   const [selectedSet, setSelectedSet] = useState<SetItem | null>(null);
+  const [previewCard, setPreviewCard] = useState<PokemonCard | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
+
 
   const { sets, seriesOrder, setsBySerie } = useSets();
 
@@ -220,7 +223,7 @@ const Search = () => {
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
       <Navbar />
 
-      {(drawerOpen || queueDrawerOpen) && (
+      {(drawerOpen || queueDrawerOpen || !!previewCard) && (
         <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { setDrawerOpen(false); setQueueDrawerOpen(false); }} />
       )}
 
@@ -371,10 +374,9 @@ const Search = () => {
                   const inInventory = inSell || inWant;
 
                   return (
-                    <button
+                    <div
                       key={card.id}
                       onClick={() => !inInventory && handleSelectCard(card)}
-                      disabled={inInventory}
                       className={`group flex flex-col items-center gap-1 p-2 rounded-lg bg-[#1a1a1a] transition-colors ${
                         inInventory
                           ? `${inSell ? 'border border-[#e3350d]' : 'border border-[#3b82f6]'} opacity-40 cursor-not-allowed`
@@ -390,6 +392,16 @@ const Search = () => {
                             <span className="text-white text-[9px] font-bold">✓</span>
                           </div>
                         )}
+                        {!inQueue && (
+                          <button
+                            onClick={e => { e.stopPropagation(); setPreviewCard(card); }}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 flex items-center justify-center cursor-pointer"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                            </svg>
+                          </button>
+                        )}
                       </div>
                       <div className="flex flex-col items-center text-xs text-center leading-tight text-[#888] group-hover:text-[#f0f0f0] transition-colors">
                         {inSell ? '● Vendo' : inWant ? '● Procuro' : (
@@ -399,7 +411,7 @@ const Search = () => {
                           </>
                         )}
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -426,6 +438,8 @@ const Search = () => {
           </button>
         </div>
       )}
+
+      <CardModal card={previewCard} onClose={() => setPreviewCard(null)} />
     </div>
   )
 }
