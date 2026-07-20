@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Navbar from '../components/layout/Navbar'
 import Pagination from '../components/ui/Pagination'
@@ -23,14 +24,15 @@ type InventoryCard = Pick<TradexCard, 'id' | 'tcg_card_id' | 'type'>;
 
 const Search = () => {
   const { user } = useAuth();
-  const { results, loading: searching, error, search, clear } = usePokemonSearch();
+  const { results, loading: searching, search, clear } = usePokemonSearch();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [page, setPage] = useState(1);
-  const [query, setQuery] = useState('');
   const [saving, setSaving] = useState(false);
   const [loadingSet, setLoadingSet] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [queue, setQueue] = useState<QueuedCard[]>([]);
+  const [initialized, setInitialized] = useState(false);
   const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
   const [inventory, setInventory] = useState<InventoryCard[]>([]);
   const [setResults, setSetResults] = useState<PokemonCard[]>([]);
@@ -39,8 +41,7 @@ const Search = () => {
   const [previewCard, setPreviewCard] = useState<PokemonCard | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
 
-
-  const { sets, seriesOrder, setsBySerie } = useSets();
+  const { sets, loading: loadingSets, seriesOrder, setsBySerie } = useSets();
 
   useEffect(() => {
     if (!user) return;
@@ -52,6 +53,30 @@ const Search = () => {
       .then(({ data }) => setInventory(data ?? []));
   }, [user]);
 
+  useEffect(() => {
+    if (initialized || loadingSets || sets.length === 0) return;
+    setInitialized(true);
+
+    const q = searchParams.get('q');
+    if (q) {
+      search(q);
+      return;
+    }
+
+    const latest = sets[0];
+    if (latest) handleSetClick(latest.id);
+  }, [sets, loadingSets, initialized]);
+
+  useEffect(() => {
+    if (!initialized) return;
+    const q = searchParams.get('q');
+    if (q) {
+      setSelectedSet(null);
+      setSetResults([]);
+      search(q);
+    }
+  }, [searchParams]);
+
   const toggleSerie = (serie: string) => {
     setOpenSeries(prev => {
       const next = new Set(prev);
@@ -61,19 +86,24 @@ const Search = () => {
   }
 
   const handleSetClick = async (setId: string) => {
+    setSearchParams({});
     setLoadingSet(true);
     setDrawerOpen(false);
     clear();
-    setQuery('');
     setPage(1);
     setSelectedSet(sets.find(s => s.id === setId) ?? null);
+    setSortBy(prev => prev === 'recent' ? 'number' : prev);
 
-    const res = await fetch(`https://api.tcgdex.net/v2/en/cards?set.id=${setId}&pagination:itemsPerPage=250`);
+    const res = await fetch(`https://api.tcgdex.net/v2/en/cards?set.id=${setId}&pagination:itemsPerPage=300`);
     const data = await res.json();
     const cards = Array.isArray(data)
       ? data.filter((c: any) => c.image && c.id.startsWith(setId + '-'))
       : [];
     const setInfo = sets.find(s => s.id === setId);
+
+    if (setInfo) {
+      setOpenSeries(prev => new Set(prev).add(setInfo.serie));
+    }
 
     setSetResults(cards.map((c: any) => ({
       id: c.id,
@@ -87,13 +117,12 @@ const Search = () => {
       },
     })));
     setLoadingSet(false);
-  }
+  };
 
-  const pageSize = 20;
-  const isSetSearch = setResults.length > 0 && !query.trim();
+  const isSetSearch = selectedSet !== null && results.length === 0;
 
   const allResults = isSetSearch ? setResults : results;
-  const totalPages = isSetSearch ? 1 : Math.ceil(allResults.length / pageSize);
+  const totalPages = Math.ceil(allResults.length / 20);
 
   const sortedResults = [...allResults].sort((a, b) => {
     if (sortBy === 'name') return a.name.localeCompare(b.name);
@@ -103,14 +132,9 @@ const Search = () => {
     return dateB.localeCompare(dateA);
   });
 
-  const displayResults = isSetSearch  ? sortedResults : sortedResults.slice((page - 1) * pageSize, page * pageSize);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSetResults([]);
-    setPage(1);
-    search(query);
-  }
+  const displayResults = isSetSearch
+    ? sortedResults
+    : sortedResults.slice((page - 1) * 20, page * 20);
 
   const handleSelectCard = async (card: PokemonCard) => {
     if (queue.some(q => q.card.id === card.id)) {
@@ -227,7 +251,7 @@ const Search = () => {
         <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { setDrawerOpen(false); setQueueDrawerOpen(false); }} />
       )}
 
-      {/* Sets drawer */}
+      {/* Sets drawer mobile */}
       <div className={`fixed top-0 left-0 h-full w-72 bg-[#111] border-r border-[#2a2a2a] z-50 transform transition-transform duration-300 overflow-y-auto md:hidden ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Sets</h2>
@@ -263,9 +287,7 @@ const Search = () => {
                     <input type="number" placeholder={type === 'sell' ? 'R$' : 'Até R$'} value={price} onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)} min="0" step="0.01" className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
                     <input type="number" placeholder="Qtd" value={quantity} onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)} min="1" className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
                     <select value={condition} onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-                      {type === 'want' && (
-                        <option value="ANY">?</option>
-                      )}
+                      {type === 'want' && <option value="ANY">?</option>}
                       <option value="M">M</option>
                       <option value="NM">NM</option>
                       <option value="LP">LP</option>
@@ -273,11 +295,7 @@ const Search = () => {
                       <option value="HP">HP</option>
                       <option value="DMG">DMG</option>
                     </select>
-                    <select
-                      value={language}
-                      onChange={e => handleQueueUpdate(card.id, 'language', e.target.value)}
-                      className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
-                    >
+                    <select value={language} onChange={e => handleQueueUpdate(card.id, 'language', e.target.value)} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
                       <option value="BR">BR</option>
                       <option value="EN">EN</option>
                       <option value="JP">JP</option>
@@ -305,38 +323,31 @@ const Search = () => {
 
         <div className="flex-1 min-w-0">
 
-          <section className="mb-6">
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <button type="button" onClick={() => setDrawerOpen(true)} className="md:hidden bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#e3350d] rounded-lg px-4 py-3 text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer shrink-0">☰</button>
-              <input
-                type="text"
-                placeholder="Nome (ex: Charizard) ou Set+Número (ex: MEG 001)"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
-              />
-              <button type="submit" disabled={searching} className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-5 py-3 text-sm cursor-pointer shrink-0">
-                {searching ? '...' : '🔍'}
-              </button>
-            </form>
-            {error && <p className="text-sm text-[#e3350d] mt-2">{error}</p>}
-          </section>
+          {/* Barra de controles: botão sets mobile + filtros + ordenação */}
+          <div className="flex items-center gap-2 mb-6 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="md:hidden bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#e3350d] rounded-lg px-4 py-2 text-sm text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer shrink-0"
+            >
+              ☰ Sets
+            </button>
 
-          {allResults.length > 0 && !isSetSearch && (
-            <div className="flex items-center gap-2 my-3">
+            <div className="flex items-center gap-2 ml-auto">
               <span className="text-xs text-[#555]">Ordenar:</span>
               <select
                 value={sortBy}
                 onChange={e => { setSortBy(e.target.value as typeof sortBy); setPage(1); }}
-                className="bg-[#1a1a1a] border border-[#2a2a2a] rounded px-3 py-1.5 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+                className="bg-[#1a1a1a] border border-[#2a2a2a] rounded px-3 py-2 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
               >
-                <option value="recent">Mais recente</option>
-                <option value="name">Nome A→Z</option>
+                {!isSetSearch && <option value="recent">Mais recente</option>}
                 <option value="number">Número</option>
+                <option value="name">Nome A→Z</option>
               </select>
             </div>
-          )}
+          </div>
 
+          {/* Header do set selecionado */}
           {isSetSearch && selectedSet && (
             <div className="flex items-center gap-4 mb-6 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
               {selectedSet.logo_url ? (
@@ -353,11 +364,12 @@ const Search = () => {
             </div>
           )}
 
+          {/* Resultados */}
           {(displayResults.length > 0 || loadingSet || searching) && (
             <section className="mb-6">
-              {(!isSetSearch) && (
+              {!isSetSearch && (
                 <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">
-                  {loadingSet || searching
+                  {searching
                     ? 'Carregando...'
                     : `Resultados (${allResults.length})${totalPages > 1 ? ` — página ${page} de ${totalPages}` : ''}`
                   }
