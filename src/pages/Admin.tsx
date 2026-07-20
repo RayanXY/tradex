@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Navbar from '../components/layout/Navbar'
 import Tabs from '../components/ui/Tabs'
+import { invalidateSetCache } from '../hooks/usePokemonSearch'
 
 interface SetItem {
   id: string,
@@ -10,6 +11,7 @@ interface SetItem {
   ptcgo_code: string | null,
   release_date: string | null,
   total: number | null,
+  official_count: number | null,
   logo_url: string | null
 }
 
@@ -23,15 +25,23 @@ interface UserItem {
   created_at: string
 }
 
+interface SyncResult {
+  updated: number,
+  inserted: number,
+  error: string | null,
+}
+
 const Admin = () => {
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [sets, setSets] = useState<SetItem[]>([]);
   const [users, setUsers] = useState<UserItem[]>([]);
   const [activeTab, setActiveTab] = useState('sets');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<SetItem>>({});
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
   useEffect(() => {
     if (activeTab === 'sets') {
@@ -56,6 +66,7 @@ const Admin = () => {
     setLoading(true);
     setSearch('');
     setEditingId(null);
+    setSyncResult(null);
   }, [activeTab]);
 
   const seriesWithDate = [...new Set(
@@ -114,7 +125,10 @@ const Admin = () => {
   const handleDeleteSet = async (id: string) => {
     if (!confirm(`Deletar set "${id}"?`)) return;
     const { error } = await supabase.from('sets').delete().eq('id', id);
-    if (!error) setSets(prev => prev.filter(s => s.id !== id));
+    if (!error) {
+      setSets(prev => prev.filter(s => s.id !== id));
+      invalidateSetCache();
+    }
   };
 
   const handleToggleRole = async (user: UserItem) => {
@@ -123,6 +137,92 @@ const Admin = () => {
     const { error } = await supabase.from('users').update({ role: newRole }).eq('id', user.id);
     if (!error) setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u));
   };
+
+  const handleSyncSets = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+
+    try {
+      const res = await fetch('https://api.tcgdex.net/v2/en/sets?pagination:itemsPerPage=500');
+      const data: Array<{
+        id: string,
+        name: string,
+        logo?: string,
+        cardCount?: { total?: number, official?: number },
+      }> = await res.json();
+
+      // IDs já existentes no banco para distinguir insert vs update
+      const existingIds = new Set(sets.map(s => s.id));
+
+      const seen = new Set<string>();
+      const deduped = data.filter(s => {
+        if (seen.has(s.id)) return false;
+        seen.add(s.id);
+        return true;
+      });
+
+      const toInsert = deduped
+        .filter(s => !existingIds.has(s.id))
+        .map(s => ({
+          id: s.id,
+          name: s.name,
+          serie: 'Other',
+          logo_url: s.logo ? `${s.logo}.webp` : null,
+          total: s.cardCount?.total ?? null,
+          official_count: s.cardCount?.official ?? null,
+        }));
+
+      const toUpdate = deduped
+        .filter(s => existingIds.has(s.id))
+        .map(s => {
+          const existing = sets.find(e => e.id === s.id);
+          return {
+            id: s.id,
+            name: s.name,
+            serie: existing?.serie ?? 'Other',
+            logo_url: s.logo ? `${s.logo}.webp` : null,
+            total: s.cardCount?.total ?? null,
+            official_count: s.cardCount?.official ?? null,
+          };
+        });
+
+      const insertResult = toInsert.length > 0
+        ? await supabase.from('sets').insert(toInsert)
+        : { error: null as null };
+
+      if (insertResult?.error) throw new Error(insertResult.error.message);
+
+      let updateError: string | null = null;
+      for (const s of toUpdate) {
+        const { error } = await supabase
+          .from('sets')
+          .update({
+            name: s.name,
+            serie: s.serie,
+            logo_url: s.logo_url,
+            total: s.total,
+            official_count: s.official_count,
+          })
+          .eq('id', s.id);
+        if (error) { updateError = error.message; break; }
+      }
+
+      if (updateError) throw new Error(updateError);
+
+      const { data: refreshed } = await supabase
+        .from('sets')
+        .select('*')
+        .order('release_date', { ascending: false, nullsFirst: false });
+
+      setSets(refreshed ?? []);
+      invalidateSetCache();
+      setSyncResult({ inserted: toInsert.length, updated: toUpdate.length, error: null });
+    } catch (err) {
+      setSyncResult({ inserted: 0, updated: 0, error: (err as Error).message });
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
@@ -142,13 +242,34 @@ const Admin = () => {
           onChange={setActiveTab}
         />
 
-        <input
-          type="text"
-          placeholder={activeTab === 'sets' ? 'Buscar por nome, ID ou série...' : 'Buscar por nome, email ou apelido...'}
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors mb-6"
-        />
+        <div className="flex items-center gap-3 mb-6">
+          <input
+            type="text"
+            placeholder={activeTab === 'sets' ? 'Buscar por nome, ID ou série...' : 'Buscar por nome, email ou apelido...'}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
+          />
+          {activeTab === 'sets' && (
+            <button
+              onClick={handleSyncSets}
+              disabled={syncing}
+              className="shrink-0 flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#e3350d] text-sm text-[#f0f0f0] px-4 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <span className={syncing ? 'animate-spin' : ''}>↻</span>
+              {syncing ? 'Sincronizando...' : 'Sincronizar sets'}
+            </button>
+          )}
+        </div>
+
+        {syncResult && (
+          <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${syncResult.error ? 'bg-[#e3350d]/10 border-[#e3350d]/30 text-[#e3350d]' : 'bg-[#22c55e]/10 border-[#22c55e]/30 text-[#22c55e]'}`}>
+            {syncResult.error
+              ? `Erro na sincronização: ${syncResult.error}`
+              : `Sincronização concluída — ${syncResult.inserted} novo${syncResult.inserted !== 1 ? 's' : ''}, ${syncResult.updated} atualizado${syncResult.updated !== 1 ? 's' : ''}.`
+            }
+          </div>
+        )}
 
         {loading ? (
           <p className="text-sm text-[#555]">Carregando...</p>
