@@ -29,6 +29,7 @@ const Search = () => {
 
   const [page, setPage] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [setFilter, setSetFilter] = useState('');
   const [loadingSet, setLoadingSet] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [queue, setQueue] = useState<QueuedCard[]>([]);
@@ -93,6 +94,7 @@ const Search = () => {
     setPage(1);
     setSelectedSet(sets.find(s => s.id === setId) ?? null);
     setSortBy(prev => prev === 'recent' ? 'number' : prev);
+    setSetFilter('');
 
     const res = await fetch(`https://api.tcgdex.net/v2/en/cards?set.id=${setId}&pagination:itemsPerPage=300`);
     const data = await res.json();
@@ -132,8 +134,15 @@ const Search = () => {
     return dateB.localeCompare(dateA);
   });
 
+  const filteredSetResults = isSetSearch && setFilter.trim()
+    ? sortedResults.filter(c =>
+        c.name.toLowerCase().includes(setFilter.toLowerCase()) ||
+        c.localId.includes(setFilter.trim())
+      )
+    : sortedResults;
+
   const displayResults = isSetSearch
-    ? sortedResults
+    ? filteredSetResults
     : sortedResults.slice((page - 1) * 20, page * 20);
 
   const handleSelectCard = async (card: PokemonCard) => {
@@ -349,19 +358,28 @@ const Search = () => {
 
           {/* Header do set selecionado */}
           {isSetSearch && selectedSet && (
-            <div className="flex items-center gap-4 mb-6 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
-              {selectedSet.logo_url ? (
-                <img src={selectedSet.logo_url} alt={selectedSet.name} className="h-10 object-contain" />
-              ) : (
-                <div className="h-10 w-24 bg-[#2a2a2a] rounded" />
-              )}
-              <div>
-                <p className="font-semibold text-[#f0f0f0]">{selectedSet.name}</p>
-                <p className="text-xs text-[#888]">
-                  {selectedSet.release_date ?? 'Data desconhecida'} · {selectedSet.official_count ?? '?'} cartas base · {selectedSet.total ?? setResults.length} total
-                </p>
+            <>
+              <div className="flex items-center gap-4 mb-4 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
+                {selectedSet.logo_url ? (
+                  <img src={selectedSet.logo_url} alt={selectedSet.name} className="h-10 object-contain" />
+                ) : (
+                  <div className="h-10 w-24 bg-[#2a2a2a] rounded" />
+                )}
+                <div>
+                  <p className="font-semibold text-[#f0f0f0]">{selectedSet.name}</p>
+                  <p className="text-xs text-[#888]">
+                    {selectedSet.release_date ?? 'Data desconhecida'} · {selectedSet.official_count ?? '?'} cartas base · {selectedSet.total ?? setResults.length} total
+                  </p>
+                </div>
               </div>
-            </div>
+              <input
+                type="text"
+                placeholder={`Buscar em ${selectedSet.name}...`}
+                value={setFilter}
+                onChange={e => setSetFilter(e.target.value)}
+                className="w-full mb-6 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
+              />
+            </>
           )}
 
           {/* Resultados */}
@@ -432,6 +450,9 @@ const Search = () => {
                 <Pagination current={page} total={totalPages} onChange={setPage} />
               )}
             </section>
+          )}
+          {isSetSearch && !loadingSet && filteredSetResults.length === 0 && setFilter.trim() && (
+            <p className="text-sm text-[#555] text-center py-8">Nenhuma carta encontrada para "{setFilter}".</p>
           )}
         </div>
       </div>
