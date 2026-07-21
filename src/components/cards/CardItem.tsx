@@ -39,11 +39,13 @@ const CardItem = ({
         <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
 
         {selectable && isSelected && (
-          <div
-            style={{ backgroundColor: selectColor }}
-            className="absolute top-1 left-1 w-5 h-5 rounded-full flex items-center justify-center z-10"
-          >
-            <span className="text-white text-xs font-bold">✓</span>
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40">
+            <div
+              style={{ backgroundColor: selectColor }}
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+            >
+              <span className="text-white text-sm font-bold">✓</span>
+            </div>
           </div>
         )}
 

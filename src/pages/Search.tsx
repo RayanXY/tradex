@@ -418,20 +418,20 @@ const Search = () => {
                       <div className="relative w-full">
                         <CardImage src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="rounded" />
                         {inQueue && (
-                          <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#e3350d] flex items-center justify-center">
-                            <span className="text-white text-[9px] font-bold">✓</span>
+                          <div className="absolute inset-0 flex items-center justify-center rounded bg-black/40">
+                            <div className="w-8 h-8 rounded-full bg-[#e3350d] flex items-center justify-center">
+                              <span className="text-white text-sm font-bold">✓</span>
+                            </div>
                           </div>
                         )}
-                        {!inQueue && (
-                          <button
-                            onClick={e => { e.stopPropagation(); setPreviewCard(card); }}
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 flex items-center justify-center cursor-pointer"
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                            </svg>
-                          </button>
-                        )}
+                        <button
+                          onClick={e => { e.stopPropagation(); setPreviewCard(card); }}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 flex items-center justify-center cursor-pointer z-10"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                          </svg>
+                        </button>
                       </div>
                       <div className="flex flex-col items-center text-xs text-center leading-tight text-[#888] group-hover:text-[#f0f0f0] transition-colors">
                         {inSell ? '● Vendo' : inWant ? '● Procuro' : (
