@@ -1,7 +1,7 @@
 import CardImage from './CardImage'
 import CardBadges from './CardBadges'
 import type { TradexCard } from '../../types'
-import { getRarityColor } from '../../constants/rarities'
+//import { getRarityColor } from '../../constants/rarities'
 
 interface CardItemProps {
   card: TradexCard,
@@ -22,7 +22,7 @@ const CardItem = ({
   onToggleSelect,
   selectColor = '#e3350d',
 }: CardItemProps) => {
-  const rarityColor = getRarityColor(card.rarity);
+  //const rarityColor = getRarityColor(card.rarity);
 
   const handleClick = () => {
     if (selectable && onToggleSelect) onToggleSelect();
@@ -32,7 +32,7 @@ const CardItem = ({
   return (
     <div
       onClick={handleClick}
-      style={{ borderColor: selectable && isSelected ? selectColor : (rarityColor ?? '#2a2a2a') }}
+      style={{ borderColor: selectable && isSelected ? selectColor : '#2a2a2a' }}
       className={`bg-[#1a1a1a] border-2 rounded-xl p-3 flex flex-col gap-2 transition-colors cursor-pointer`}
     >
       <div className="relative">
