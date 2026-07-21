@@ -47,6 +47,15 @@ const CardItem = ({
           </div>
         )}
 
+        <button
+          onClick={e => { e.stopPropagation(); onOpenModal(card); }}
+          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 flex items-center justify-center cursor-pointer z-10"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </button>
+
         <CardBadges condition={card.condition} language={card.language} quantity={card.quantity} />
       </div>
 
@@ -72,7 +81,7 @@ const CardItem = ({
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
 export default CardItem
