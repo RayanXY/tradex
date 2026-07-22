@@ -1,24 +1,25 @@
-import { supabase } from '../lib/supabase'
-import { useState, useEffect } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import Navbar from '../components/layout/Navbar'
-import CardItem from '../components/cards/CardItem'
-import Pagination from '../components/ui/Pagination'
-import CardModal from '../components/cards/CardModal'
-import type { TradexCard, Seller } from '../types'
+import { supabase } from '../lib/supabase';
+import { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import Navbar from '../components/layout/Navbar';
+import CardItem from '../components/cards/CardItem';
+import CardModal from '../components/cards/CardModal';
+import Tabs from '../components/ui/Tabs';
+import { useShowcaseCards } from '../hooks/useShowcaseCards';
+import type { TradexCard, Seller } from '../types';
 
-const CARDS_PER_PAGE = 12;
+type ViewMode = 'grade' | 'sets';
 
 const Showcase = () => {
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const { phone } = useParams<{ phone: string }>();
-  const [selling, setSelling] = useState<TradexCard[]>([]);
+  const [loadingSeller, setLoadingSeller] = useState(true);
   const [seller, setSeller] = useState<Seller | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('grade');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [modalCard, setModalCard] = useState<TradexCard | null>(null);
+  
+  const { phone } = useParams<{ phone: string }>();
+  const { cards, groups, loading: loadingCards } = useShowcaseCards(seller?.id ?? null, 'sell');
 
   useEffect(() => {
     const loadSeller = async () => {
@@ -30,48 +31,16 @@ const Showcase = () => {
 
       if (!userData) {
         setNotFound(true);
-        setLoading(false);
+        setLoadingSeller(false);
         return;
       }
 
       setSeller(userData);
-
-      const { count } = await supabase
-        .from('cards')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userData.id)
-        .eq('active', true)
-        .eq('type', 'sell');
-
-      setTotal(count ?? 0);
-      setLoading(false);
+      setLoadingSeller(false);
     }
 
     loadSeller();
   }, [phone]);
-
-  useEffect(() => {
-    if (!seller) return;
-
-    const loadCards = async () => {
-      const from = (page - 1) * CARDS_PER_PAGE;
-      const to = from + CARDS_PER_PAGE - 1;
-
-      const { data } = await supabase
-        .from('cards')
-        .select('*')
-        .eq('user_id', seller.id)
-        .eq('active', true)
-        .eq('type', 'sell')
-        .range(from, to);
-
-      setSelling(data ?? []);
-    }
-
-    loadCards();
-  }, [seller, page]);
-
-  const totalPages = Math.ceil(total / CARDS_PER_PAGE);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -84,7 +53,7 @@ const Showcase = () => {
   const handleContact = () => {
     if (!seller || selected.size === 0) return;
 
-    const selectedCards = selling.filter(c => selected.has(c.id));
+    const selectedCards = cards.filter(c => selected.has(c.id));
     const list = selectedCards
       .map(c => `• ${c.name} (${c.set_name})`)
       .join('\n');
@@ -94,12 +63,14 @@ const Showcase = () => {
     window.open(url, '_blank');
   }
 
+  const loading = loadingSeller || loadingCards;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
         <p className="text-[#555] text-sm">Carregando...</p>
       </div>
-    )
+    );
   }
 
   if (notFound) {
@@ -107,18 +78,34 @@ const Showcase = () => {
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
         <p className="text-[#555] text-sm">Vendedor não encontrado.</p>
       </div>
-    )
+    );
   }
+
+  const renderCards = (cardList: TradexCard[]) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {cardList.map(card => (
+        <CardItem
+          key={card.id}
+          card={card}
+          onOpenModal={setModalCard}
+          selectable
+          isSelected={selected.has(card.id)}
+          onToggleSelect={() => toggleSelect(card.id)}
+          selectColor="#e3350d"
+        />
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-6 py-8 pb-28">
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#f0f0f0]">{seller?.name}</h1>
           <p className="text-sm text-[#888] mt-1">
-            {total} {total === 1 ? 'carta à venda' : 'cartas à venda'}
+            {cards.length} {cards.length === 1 ? 'carta à venda' : 'cartas à venda'}
           </p>
           <Link
             to={`/u/${phone}/procuro`}
@@ -128,30 +115,52 @@ const Showcase = () => {
           </Link>
         </div>
 
-        <section className="mb-10">
-          <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">Vendo</h2>
-          {selling.length === 0 ? (
-            <p className="text-sm text-[#555]">Nenhuma carta à venda no momento.</p>
-          ) : (
-            <>
-              <p className="text-xs text-[#555] mb-4">Selecione as cartas de interesse e clique em "Contatar".</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {selling.map(card => (
-                  <CardItem
-                    key={card.id}
-                    card={card}
-                    onOpenModal={setModalCard}
-                    selectable
-                    isSelected={selected.has(card.id)}
-                    onToggleSelect={() => toggleSelect(card.id)}
-                    selectColor="#e3350d"
-                  />
+        {cards.length === 0 ? (
+          <p className="text-sm text-[#555]">Nenhuma carta à venda no momento.</p>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs text-[#555]">Selecione as cartas de interesse e clique em "Contatar".</p>
+              <Tabs
+                tabs={[
+                  { id: 'grade', label: 'Grade' },
+                  { id: 'sets', label: 'Por set' },
+                ]}
+                active={viewMode}
+                onChange={id => setViewMode(id as ViewMode)}
+              />
+            </div>
+
+            {viewMode === 'grade' && renderCards(cards)}
+
+            {viewMode === 'sets' && (
+              <div className="flex flex-col gap-10">
+                {groups.map((group, index) => (
+                  <div key={group.setId} className={index !== 0 ? 'border-t border-[#222] pt-10' : ''}>
+                    <div className="flex items-center gap-3 mb-4">
+                      {group.logoUrl ? (
+                        <>
+                          <img
+                            src={group.logoUrl}
+                            alt={group.setName}
+                            className="h-10 object-contain"
+                          />
+                          <span className="text-xl font-semibold text-[#f0f0f0]">{group.setName}</span>
+                        </>
+                      ) : (
+                        <span className="text-xl font-semibold text-[#f0f0f0]">{group.setName}</span>
+                      )}
+                      <span className="text-xs text-[#555]">
+                        {group.cards.length} {group.cards.length === 1 ? 'carta' : 'cartas'}
+                      </span>
+                    </div>
+                    {renderCards(group.cards)}
+                  </div>
                 ))}
               </div>
-              <Pagination current={page} total={totalPages} onChange={setPage} />
-            </>
-          )}
-        </section>
+            )}
+          </>
+        )}
       </main>
 
       {selected.size > 0 && (
