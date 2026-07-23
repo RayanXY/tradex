@@ -8,6 +8,7 @@ import CardItem from '../components/cards/CardItem'
 import CardModal from '../components/cards/CardModal'
 import Tabs from '../components/ui/Tabs'
 import type { TradexCard } from '../types'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 
 const CARDS_PER_PAGE = 12;
 
@@ -27,6 +28,55 @@ const Dashboard = () => {
   const [editValues, setEditValues] = useState<{ price: string; quantity: string; condition: string; language: string }>({
     price: '', quantity: '1', condition: 'NM', language: 'BR'
   });
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description?: string;
+    confirmLabel?: string;
+    onConfirm: () => void;
+  } >({ open: false, title: '', onConfirm: () => {} });
+
+  const closeDialog = () => setConfirmDialog(prev => ({ ...prev, open: false }));
+
+  const askConfirm = (opts: Omit<typeof confirmDialog, 'open'>) => {
+    setConfirmDialog({ open: true, ...opts });
+  }
+
+  const handleRemoveConfirmed = (id: string, type: 'sell' | 'want') => {
+    askConfirm({
+      title: 'Remover carta?',
+      description: 'A carta será removida do seu inventário.',
+      confirmLabel: 'Remover',
+      onConfirm: () => { handleRemove(id, type); closeDialog(); },
+    });
+  }
+
+  const handleRemoveAll = async (type: 'sell' | 'want') => {
+    askConfirm({
+      title: type === 'sell' ? 'Remover todas as cartas à venda?' : 'Remover toda a lista de procura?',
+      description: 'Essa ação não pode ser desfeita.',
+      confirmLabel: 'Remover todas',
+      onConfirm: async () => {
+        closeDialog();
+        await supabase
+          .from('cards')
+          .update({ active: false })
+          .eq('user_id', user!.id)
+          .eq('type', type)
+          .eq('active', true);
+
+        if (type === 'sell') {
+          setSellTotal(0);
+          setSellPage(1);
+          setSelling([]);
+        } else {
+          setWantTotal(0);
+          setWantPage(1);
+          setWanting([]);
+        }
+      },
+    });
+  }
 
   const loadCounts = useCallback(async () => {
     if (!user) return;
@@ -170,7 +220,7 @@ const Dashboard = () => {
                   Vendo ({sellTotal})
                 </h2>
                 <Link to={`/u/${user?.slug}`} className="text-xs text-[#f4d03f] hover:underline">
-                  Ver mostruário →
+                  Ver lista →
                 </Link>
               </div>
               {loadingDashboard ? (
@@ -229,9 +279,19 @@ const Dashboard = () => {
           <>
             {/* Vendo */}
             <section className="mb-10">
-              <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">
-                Vendo ({sellTotal})
-              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">
+                  Vendo ({sellTotal})
+                </h2>
+                {selling.length > 0 && (
+                  <button
+                    onClick={() => handleRemoveAll('sell')}
+                    className="text-xs text-[#e3350d] hover:text-[#f0f0f0] transition-colors cursor-pointer"
+                  >
+                    Remover todas
+                  </button>
+                )}
+              </div>
               {loadingDashboard ? (
                 <p className="text-sm text-[#555]">Carregando...</p>
               ) : selling.length === 0 ? (
@@ -279,7 +339,7 @@ const Dashboard = () => {
                               </svg>
                             </button>
                             <button
-                              onClick={() => handleRemove(card.id, 'sell')}
+                              onClick={() => handleRemoveConfirmed(card.id, 'sell')}
                               className="text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
                               title="Remover"
                             >
@@ -373,9 +433,19 @@ const Dashboard = () => {
 
             {/* Procuro */}
             <section>
-              <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider mb-3">
-                Procuro ({wantTotal})
-              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">
+                  Procuro ({wantTotal})
+                </h2>
+                {wanting.length > 0 && (
+                  <button
+                    onClick={() => handleRemoveAll('want')}
+                    className="text-xs text-[#e3350d] hover:text-[#f0f0f0] transition-colors cursor-pointer"
+                  >
+                    Remover todas
+                  </button>
+                )}
+              </div>
               {loadingDashboard ? (
                 <p className="text-sm text-[#555]">Carregando...</p>
               ) : wanting.length === 0 ? (
@@ -423,7 +493,7 @@ const Dashboard = () => {
                               </svg>
                             </button>
                             <button
-                              onClick={() => handleRemove(card.id, 'want')}
+                              onClick={() => handleRemoveConfirmed(card.id, 'want')}
                               className="text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
                               title="Remover"
                             >
@@ -520,6 +590,15 @@ const Dashboard = () => {
       </main>
 
       <CardModal card={modalCard} onClose={() => setModalCard(null)} />
+
+        <ConfirmDialog
+          open={confirmDialog.open}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmLabel={confirmDialog.confirmLabel}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={closeDialog}
+        />
     </div>
   );
 };
