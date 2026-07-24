@@ -9,6 +9,7 @@ import CardImage from '../components/cards/CardImage'
 import type { SetItem, TradexCard } from '../types'
 import useSets from '../hooks/useSets'
 import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
+import { VARIANT_OPTIONS } from '../constants/variants';
 
 interface QueuedCard {
   card: PokemonCard,
@@ -17,7 +18,9 @@ interface QueuedCard {
   type: 'sell' | 'want',
   condition: string,
   language: string,
-  rarity: string | null
+  rarity: string | null,
+  variant: string,
+  types: string[] | null
 }
 
 type InventoryCard = Pick<TradexCard, 'id' | 'tcg_card_id' | 'type'>;
@@ -164,7 +167,9 @@ const Search = () => {
       type: 'sell',
       condition: 'NM',
       language: 'BR',
-      rarity: null
+      rarity: null,
+      variant: 'normal',
+      types: null
     }]);
 
     try {
@@ -180,7 +185,7 @@ const Search = () => {
     }
   }
 
-  const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type' | 'condition' | 'language', value: string) => {
+  const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type' | 'condition' | 'language' | 'variant', value: string) => {
     setQueue(prev => prev.map(q => {
       if (q.card.id !== cardId) return q;
       const updated = { ...q, [field]: value };
@@ -212,7 +217,9 @@ const Search = () => {
       type: q.type,
       condition: q.condition,
       language: q.language,
-      rarity: q.rarity
+      rarity: q.rarity,
+      variant: q.variant,
+      types: q.types
     }));
 
     const { data, error: supabaseError } = await supabase.from('cards').insert(rows).select();
@@ -277,7 +284,7 @@ const Search = () => {
       </div>
 
       {/* Queue drawer */}
-      <div className={`fixed top-0 right-0 h-full w-full md:max-w-lg bg-[#111] border-l border-[#2a2a2a] z-50 transform transition-transform duration-300 overflow-y-auto ${queueDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-full md:max-w-md bg-[#111] border-l border-[#2a2a2a] z-50 transform transition-transform duration-300 overflow-y-auto ${queueDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Selecionadas ({queue.length})</h2>
           <button onClick={() => setQueueDrawerOpen(false)} className="text-[#555] hover:text-[#f0f0f0] cursor-pointer text-lg">✕</button>
@@ -287,8 +294,9 @@ const Search = () => {
             <p className="text-sm text-[#555]">Nenhuma carta selecionada.</p>
           ) : (
             <>
-              {queue.map(({ card, price, quantity, type, condition, language }) => (
-                <div key={card.id} className="flex flex-col gap-2 border-b border-[#2a2a2a] pb-3 last:border-0 last:pb-0">
+              {queue.map(({ card, price, quantity, type, condition, language, variant }) => (
+                <div key={card.id} className="flex flex-col gap-2.5 border-b border-[#2a2a2a] pb-4 last:border-0 last:pb-0">
+                  {/* Cabeçalho */}
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-sm font-semibold text-[#f0f0f0]">{card.name}</span>
@@ -297,26 +305,51 @@ const Search = () => {
                     </div>
                     <button onClick={() => handleQueueRemove(card.id)} className="text-xs text-[#555] hover:text-[#e3350d] cursor-pointer">✕</button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => handleQueueUpdate(card.id, 'type', 'sell')} className={`px-2.5 py-1 rounded text-xs font-semibold cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Vendo</button>
-                    <button onClick={() => handleQueueUpdate(card.id, 'type', 'want')} className={`px-2.5 py-1 rounded text-xs font-semibold cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Procuro</button>
-                    <input type="number" placeholder={type === 'sell' ? 'R$' : 'Até R$'} value={price} onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)} min="0" step="0.01" className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
-                    <input type="number" placeholder="Qtd" value={quantity} onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)} min="1" className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
-                    <select value={condition} onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-                      {type === 'want' && <option value="ANY">?</option>}
-                      <option value="M">M</option>
-                      <option value="NM">NM</option>
-                      <option value="LP">LP</option>
-                      <option value="MP">MP</option>
-                      <option value="HP">HP</option>
-                      <option value="DMG">DMG</option>
-                    </select>
-                    <select value={language} onChange={e => handleQueueUpdate(card.id, 'language', e.target.value)} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-                      <option value="BR">BR</option>
-                      <option value="EN">EN</option>
-                      <option value="JP">JP</option>
-                    </select>
+
+                  {/* Linha 1: Tipo + Variante */}
+                  <div className="flex flex-col gap-1">
+                    <div className="grid grid-cols-[1fr_1fr_120px] gap-2">
+                      <span className="text-[10px] text-[#555] uppercase tracking-wider col-span-2">Tipo</span>
+                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Variante</span>
+                    </div>
+                    <div className="grid grid-cols-[1fr_1fr_120px] gap-2 items-center">
+                      <button onClick={() => handleQueueUpdate(card.id, 'type', 'sell')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Vendo</button>
+                      <button onClick={() => handleQueueUpdate(card.id, 'type', 'want')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Procuro</button>
+                      <select value={variant} onChange={e => handleQueueUpdate(card.id, 'variant', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                        {VARIANT_OPTIONS.map(v => (
+                          <option key={v.value} value={v.value}>{v.label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
+
+                  {/* Linha 2: Preço + Qtd + Condição + Língua */}
+                  <div className="flex flex-col gap-1">
+                    <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2">
+                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Preço</span>
+                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Qtd</span>
+                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Cond.</span>
+                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Língua</span>
+                    </div>
+                    <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2 items-center">
+                      <input type="number" placeholder={type === 'sell' ? 'R$' : 'Até R$'} value={price} onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)} min="0" step="0.01" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
+                      <input type="number" placeholder="1" value={quantity} onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)} min="1" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
+                      <select value={condition} onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                        {type === 'want' && <option value="ANY">?</option>}
+                        <option value="M">M</option>
+                        <option value="NM">NM</option>
+                        <option value="LP">LP</option>
+                        <option value="MP">MP</option>
+                        <option value="HP">HP</option>
+                        <option value="DMG">DMG</option>
+                      </select>
+                      <select value={language} onChange={e => handleQueueUpdate(card.id, 'language', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                        <option value="BR">BR</option>
+                        <option value="EN">EN</option>
+                        <option value="JP">JP</option>
+                      </select>
+                    </div>
+    </div>
                 </div>
               ))}
               <div className="flex gap-3 pt-2">

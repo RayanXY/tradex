@@ -1,6 +1,8 @@
+import './CardItem.css'
 import CardImage from './CardImage'
 import CardBadges from './CardBadges'
 import type { TradexCard } from '../../types'
+import { VARIANTS, type CardVariant } from '../../constants/variants'
 //import { getRarityColor } from '../../constants/rarities'
 
 interface CardItemProps {
@@ -33,8 +35,11 @@ const CardItem = ({
     <div
       onClick={handleClick}
       style={{ borderColor: selectable && isSelected ? selectColor : '#2a2a2a' }}
-      className={`bg-[#1a1a1a] border-2 rounded-xl p-3 flex flex-col gap-2 transition-colors cursor-pointer`}
+      className={`relative bg-[#1a1a1a] border-2 rounded-xl p-3 flex flex-col gap-2 transition-colors cursor-pointer overflow-hidden`}
     >
+      {card.variant && card.variant !== 'normal' && (
+        <div className={`variant-overlay variant-${card.variant}`} />
+      )}
       <div className="relative">
         <CardImage src={card.image_url} alt={card.name} className="rounded-lg" language={card.language} />
 
@@ -73,14 +78,21 @@ const CardItem = ({
             : <p className="text-sm text-[#555]">Valor a negociar</p>
           }
         </div>
-        {onRemove && (
-          <button
-            onClick={e => { e.stopPropagation(); onRemove(); }}
-            className="text-xs text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
-          >
-            Remover
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {card.variant && card.variant !== 'normal' && (
+            <span className="text-[10px] text-[#888] uppercase tracking-wider">
+              {VARIANTS[card.variant as CardVariant]?.shortLabel}
+            </span>
+          )}
+          {onRemove && (
+            <button
+              onClick={e => { e.stopPropagation(); onRemove(); }}
+              className="text-xs text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
+            >
+              Remover
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

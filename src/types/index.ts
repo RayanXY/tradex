@@ -10,7 +10,9 @@ export interface TradexCard {
   type: 'sell' | 'want',
   condition: string,
   language: string,
-  rarity?: string | null
+  rarity?: string | null,
+  variant: string,
+  types?: string[] | null
 }
 
 export interface Seller {
