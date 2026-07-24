@@ -16,3 +16,23 @@ export const languageCountry: Record<string, string> = {
 
 export const CONDITIONS = ['M', 'NM', 'LP', 'MP', 'HP', 'DMG'] as const;
 export const LANGUAGES = ['BR', 'EN', 'JP'] as const;
+
+export const SERIES_EN_ONLY = new Set([
+  'misc', 'base', 'gym', 'neo', 'lc', 'ecard', 'ex', 'pop', 'tk', 'dp', 'pl'
+]);
+
+export const getLocalizedImageUrl = (imageUrl: string, language?: string): string => {
+  if (!imageUrl) return imageUrl;
+
+  if (!language || language === 'EN' || language === 'JP') return imageUrl;
+
+  const match = imageUrl.match(/assets\.tcgdex\.net\/[a-z-]+\/([a-z]+)\//);
+  const serieId = match?.[1];
+
+  if (!serieId || SERIES_EN_ONLY.has(serieId)) return imageUrl;
+
+  return imageUrl.replace(
+    /(assets\.tcgdex\.net\/)([a-z-]+)(\/)/,
+    '$1pt$3'
+  );
+}

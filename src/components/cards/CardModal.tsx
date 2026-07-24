@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import ReactCountryFlag from 'react-country-flag'
 import type { TradexCard } from '../../types'
 import useCardDetails from '../../hooks/useCardDetails'
-import { conditionColor, languageCountry } from '../../constants/cards'
+import { conditionColor, languageCountry, getLocalizedImageUrl  } from '../../constants/cards'
 import type { PokemonCard } from '../../hooks/usePokemonSearch'
 
 type CardModalCard =
@@ -39,9 +39,11 @@ const CardModal = ({ card, onClose }: CardModalProps) => {
   if (!card) return null;
 
   const isTradex = isTradexCard(card);
-  const imageUrl = isTradex
+  /*const imageUrl = isTradex
     ? card.image_url.replace('/low.webp', '/high.webp')
-    : card.image + '/high.webp';
+    : card.image + '/high.webp';*/
+  const rawUrl = isTradex ? card.image_url : card.image + '/low.webp';
+  const imageUrl = getLocalizedImageUrl(rawUrl, isTradex ? card.language : 'BR').replace('/low.webp', '/high.webp');
   const setName = isTradex ? card.set_name : card.set.name;
   const localId = isTradex ? null : (card as any).localId;
   const c = isTradex ? (conditionColor[card.condition] ?? conditionColor['NM']) : null;

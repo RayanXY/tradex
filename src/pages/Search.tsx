@@ -416,7 +416,7 @@ const Search = () => {
                       }`}
                     >
                       <div className="relative w-full">
-                        <CardImage src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="rounded" />
+                        <CardImage src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="rounded" language="BR" />
                         {inQueue && (
                           <div className="absolute inset-0 flex items-center justify-center rounded bg-black/40">
                             <div className="w-8 h-8 rounded-full bg-[#e3350d] flex items-center justify-center">

@@ -36,7 +36,7 @@ const CardItem = ({
       className={`bg-[#1a1a1a] border-2 rounded-xl p-3 flex flex-col gap-2 transition-colors cursor-pointer`}
     >
       <div className="relative">
-        <CardImage src={card.image_url} alt={card.name} className="rounded-lg" />
+        <CardImage src={card.image_url} alt={card.name} className="rounded-lg" language={card.language} />
 
         {selectable && isSelected && (
           <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40">
