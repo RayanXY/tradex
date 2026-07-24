@@ -597,12 +597,14 @@ const Dashboard = () => {
         )}
       </main>
 
-      <CardModal
-        cards={modalList === 'sell' ? selling : modalList === 'want' ? wanting : []}
-        currentIndex={modalIndex}
-        onIndexChange={setModalIndex}
-        onClose={() => setModalList(null)}
-      />
+      {modalList !== null && (
+        <CardModal
+          cards={modalList === 'sell' ? selling : wanting}
+          currentIndex={modalIndex}
+          onIndexChange={setModalIndex}
+          onClose={() => setModalList(null)}
+        />
+      )}
 
       <ConfirmDialog
         open={confirmDialog.open}
