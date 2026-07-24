@@ -32,8 +32,6 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const pointerStartX = useRef<number | null>(null);
-
   const goTo = (index: number) => {
     if (index < 0 || index >= cards.length) return;
     onIndexChange(index);
