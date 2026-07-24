@@ -43,13 +43,21 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
     if (!card) return;
     setAccordionOpen(false);
     setImgLoaded(false);
+
+    document.body.style.overflow = 'hidden'
+
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft') goTo(currentIndex - 1);
       if (e.key === 'ArrowRight') goTo(currentIndex + 1);
-    };
+    }
+
     document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
+
+    return () =>{
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', handleKey);
+    }
   }, [card, currentIndex, onClose]);
 
   if (!card) return null
@@ -65,18 +73,20 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex < cards.length - 1;
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    pointerStartX.current = e.clientX;
-  }
+  const touchStartX = useRef<number | null>(null);
 
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (pointerStartX.current === null) return;
-    const delta = e.clientX - pointerStartX.current;
-    pointerStartX.current = null;
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
     if (Math.abs(delta) < 50) return;
     if (delta < 0) goTo(currentIndex + 1);
     else goTo(currentIndex - 1);
-  }
+  };
 
   return (
     <div
@@ -84,10 +94,10 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
       onClick={onClose}
     >
       <div
-        className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl w-full max-w-sm p-3 flex flex-col gap-2 my-auto relative overflow-visible"
+        className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl w-full max-w-sm p-3 flex flex-col gap-2 my-auto relative overflow-visible touch-action-none"
         onClick={e => e.stopPropagation()}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Prev */}
         {hasPrev && (
@@ -124,7 +134,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
         </button>
 
         {/* 1. Nome */}
-        <div className="pr-8">
+        <div className="px-8 text-center">
           <p className="font-bold text-[#f0f0f0] text-xl leading-tight">
             {card.name}
             {localId && <span className="text-[#555] font-normal text-base ml-2">#{localId}</span>}
@@ -160,11 +170,12 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
         )}
 
         {/* 3. Logo do set */}
-        {details?.set?.logo && (
-          <div className="flex justify-center">
-            <img src={`${details.set.logo}.webp`} alt={details.set.name} className="h-8 object-contain opacity-80" />
-          </div>
-        )}
+        <div className="flex justify-center h-8">
+          {details?.set?.logo
+            ? <img src={`${details.set.logo}.webp`} alt={details.set.name} className="h-8 object-contain opacity-80" />
+            : <div className="h-8 w-32 rounded bg-[#2a2a2a] animate-pulse" />
+          }
+        </div>
 
         {/* 4. Accordion de detalhes */}
         <div className="border border-[#2a2a2a] rounded-xl overflow-hidden">
