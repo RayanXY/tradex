@@ -3,6 +3,7 @@ import CardImage from './CardImage'
 import CardBadges from './CardBadges'
 import type { TradexCard } from '../../types'
 import { VARIANTS, type CardVariant } from '../../constants/variants'
+import VariantOverlay from './VariantOverlay'
 //import { getRarityColor } from '../../constants/rarities'
 
 interface CardItemProps {
@@ -38,7 +39,7 @@ const CardItem = ({
       className={`relative bg-[#1a1a1a] border-2 rounded-xl p-3 flex flex-col gap-2 transition-colors cursor-pointer overflow-hidden`}
     >
       {card.variant && card.variant !== 'normal' && (
-        <div className={`variant-overlay variant-${card.variant}`} />
+        <VariantOverlay variant={card.variant} types={card.types} />
       )}
       <div className="relative">
         <CardImage src={card.image_url} alt={card.name} className="rounded-lg" language={card.language} />
@@ -66,12 +67,12 @@ const CardItem = ({
         <CardBadges condition={card.condition} language={card.language} quantity={card.quantity} />
       </div>
 
-      <div>
+      <div className="relative z-10">
         <p className="text-sm font-semibold text-[#f0f0f0] leading-tight">{card.name}</p>
         <p className="text-xs text-[#888]">{card.set_name}</p>
       </div>
 
-      <div className="flex items-center justify-between mt-auto">
+      <div className="relative z-10 flex items-center justify-between mt-auto">
         <div>
           {card.price != null
             ? <p className="text-sm font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>

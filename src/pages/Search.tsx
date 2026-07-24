@@ -177,7 +177,7 @@ const Search = () => {
       if (res.ok) {
         const data = await res.json();
         setQueue(prev => prev.map(q =>
-          q.card.id === card.id ? { ...q, rarity: data.rarity ?? null } : q
+          q.card.id === card.id ? { ...q, rarity: data.rarity ?? null, types: data.types ?? null } : q
         ));
       }
     } catch {
