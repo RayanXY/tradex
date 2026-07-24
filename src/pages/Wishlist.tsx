@@ -16,7 +16,14 @@ const Wishlist = () => {
   const [seller, setSeller] = useState<Seller | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grade');
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [modalCard, setModalCard] = useState<TradexCard | null>(null);
+  
+  const [modalIndex, setModalIndex] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const openModal = (card: TradexCard) => {
+    setModalIndex(cards.findIndex(c => c.id === card.id));
+    setModalOpen(true);
+  }
   
   const { phone } = useParams<{ phone: string }>();
   const { cards, groups, loading: loadingCards } = useShowcaseCards(seller?.id ?? null, 'want');
@@ -87,7 +94,7 @@ const Wishlist = () => {
         <CardItem
           key={card.id}
           card={card}
-          onOpenModal={setModalCard}
+          onOpenModal={openModal}
           selectable
           isSelected={selected.has(card.id)}
           onToggleSelect={() => toggleSelect(card.id)}
@@ -177,7 +184,14 @@ const Wishlist = () => {
         </div>
       )}
 
-      <CardModal card={modalCard} onClose={() => setModalCard(null)} />
+      {modalOpen && (
+        <CardModal
+          cards={cards}
+          currentIndex={modalIndex}
+          onIndexChange={setModalIndex}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
     </div>
   )
 }

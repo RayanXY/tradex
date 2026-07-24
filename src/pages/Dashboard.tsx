@@ -23,7 +23,8 @@ const Dashboard = () => {
   const [wanting, setWanting] = useState<TradexCard[]>([]);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [modalCard, setModalCard] = useState<TradexCard | null>(null);
+  const [modalList, setModalList] = useState<'sell' | 'want' | null>(null);
+  const [modalIndex, setModalIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'view' | 'manage'>('view');
   const [editValues, setEditValues] = useState<{ price: string; quantity: string; condition: string; language: string }>({
     price: '', quantity: '1', condition: 'NM', language: 'BR'
@@ -35,6 +36,13 @@ const Dashboard = () => {
     confirmLabel?: string;
     onConfirm: () => void;
   } >({ open: false, title: '', onConfirm: () => {} });
+
+  const openModal = (card: TradexCard, list: 'sell' | 'want') => {
+    const cards = list === 'sell' ? selling : wanting;
+    const index = cards.findIndex(c => c.id === card.id);
+    setModalList(list);
+    setModalIndex(index);
+  }
 
   const closeDialog = () => setConfirmDialog(prev => ({ ...prev, open: false }));
 
@@ -234,7 +242,7 @@ const Dashboard = () => {
                       <CardItem
                         key={card.id}
                         card={card}
-                        onOpenModal={setModalCard}
+                        onOpenModal={c => openModal(c, 'sell')}
                       />
                     ))}
                   </div>
@@ -264,7 +272,7 @@ const Dashboard = () => {
                       <CardItem
                         key={card.id}
                         card={card}
-                        onOpenModal={setModalCard}
+                        onOpenModal={c => openModal(c, 'want')}
                       />
                     ))}
                   </div>
@@ -320,7 +328,7 @@ const Dashboard = () => {
                           {/* Ícones */}
                           <div className="flex items-center gap-2 shrink-0">
                             <button
-                              onClick={() => setModalCard(card)}
+                              onClick={() => openModal(card, 'sell')}
                               className="text-[#555] hover:text-[#f0f0f0] transition-colors cursor-pointer"
                               title="Ver detalhes"
                             >
@@ -474,7 +482,7 @@ const Dashboard = () => {
                           {/* Ícones */}
                           <div className="flex items-center gap-2 shrink-0">
                             <button
-                              onClick={() => setModalCard(card)}
+                              onClick={() => openModal(card, 'want')}
                               className="text-[#555] hover:text-[#f0f0f0] transition-colors cursor-pointer"
                               title="Ver detalhes"
                             >
@@ -589,16 +597,21 @@ const Dashboard = () => {
         )}
       </main>
 
-      <CardModal card={modalCard} onClose={() => setModalCard(null)} />
+      <CardModal
+        cards={modalList === 'sell' ? selling : modalList === 'want' ? wanting : []}
+        currentIndex={modalIndex}
+        onIndexChange={setModalIndex}
+        onClose={() => setModalList(null)}
+      />
 
-        <ConfirmDialog
-          open={confirmDialog.open}
-          title={confirmDialog.title}
-          description={confirmDialog.description}
-          confirmLabel={confirmDialog.confirmLabel}
-          onConfirm={confirmDialog.onConfirm}
-          onCancel={closeDialog}
-        />
+      <ConfirmDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        confirmLabel={confirmDialog.confirmLabel}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeDialog}
+      />
     </div>
   );
 };

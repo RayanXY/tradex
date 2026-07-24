@@ -39,8 +39,15 @@ const Search = () => {
   const [setResults, setSetResults] = useState<PokemonCard[]>([]);
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
   const [selectedSet, setSelectedSet] = useState<SetItem | null>(null);
-  const [previewCard, setPreviewCard] = useState<PokemonCard | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
+
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  const openPreview = (card: PokemonCard) => {
+    setPreviewIndex(displayResults.findIndex(c => c.id === card.id));
+    setPreviewOpen(true);
+  }
 
   const { sets, loading: loadingSets, seriesOrder, setsBySerie } = useSets();
 
@@ -256,7 +263,7 @@ const Search = () => {
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
       <Navbar />
 
-      {(drawerOpen || queueDrawerOpen || !!previewCard) && (
+      {(drawerOpen || queueDrawerOpen) && (
         <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { setDrawerOpen(false); setQueueDrawerOpen(false); }} />
       )}
 
@@ -425,7 +432,7 @@ const Search = () => {
                           </div>
                         )}
                         <button
-                          onClick={e => { e.stopPropagation(); setPreviewCard(card); }}
+                          onClick={e => { e.stopPropagation(); openPreview(card); }}
                           className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 flex items-center justify-center cursor-pointer z-10"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -472,7 +479,14 @@ const Search = () => {
         </div>
       )}
 
-      <CardModal card={previewCard} onClose={() => setPreviewCard(null)} />
+      {previewOpen && (
+        <CardModal
+          cards={displayResults.map(c => ({ ...c, localId: c.localId }))}
+          currentIndex={previewIndex}
+          onIndexChange={setPreviewIndex}
+          onClose={() => setPreviewOpen(false)}
+        />
+      )}
     </div>
   )
 }
