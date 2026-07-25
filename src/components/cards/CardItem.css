@@ -15,8 +15,8 @@
   inset: 0;
   border-radius: 0.5rem;
   pointer-events: none;
-  opacity: 0.65;
-  mix-blend-mode: overlay;
+  opacity: 0.2;
+  mix-blend-mode: color-dodge;
   background-size: 200% 200%;
   animation: holo-shift 8s ease infinite;
 }
@@ -24,11 +24,13 @@
 .variant-holo {
   background-image: linear-gradient(
     115deg,
-    transparent 15%,
-    #00e7ff 35%,
-    #eb8bff 50%,
-    #ffe566 65%,
-    transparent 85%
+    #ff6b6b 0%,
+    #ffd93d 20%,
+    #6bcb77 40%,
+    #00e7ff 55%,
+    #eb8bff 70%,
+    #ff6b6b 85%,
+    #ffd93d 100%
   );
 }
 

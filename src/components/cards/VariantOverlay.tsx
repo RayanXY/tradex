@@ -38,6 +38,26 @@ interface Props {
 const VariantOverlay = ({ variant, types }: Props) => {
   if (!variant || variant === 'normal') return null;
 
+  if (variant === 'reverse') {
+    const typeName = types?.[0]?.toLowerCase() ?? 'colorless';
+    const color = TYPE_COLORS[typeName] ?? '#d4d4d4';
+
+    return (
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        borderRadius: '0.75rem',
+        pointerEvents: 'none',
+        opacity: 0.3,
+        mixBlendMode: 'color-dodge',
+        background: `linear-gradient(115deg, transparent 15%, ${color} 50%, transparent 85%)`,
+        backgroundSize: '200% 200%',
+        animation: 'holo-shift 8s ease infinite',
+        zIndex: 0,
+      }} />
+    );
+  }
+
   if (variant === 'energy_pattern') {
     const typeName = types?.[0]?.toLowerCase() ?? 'colorless';
     const color = TYPE_COLORS[typeName] ?? '#d4d4d4';
