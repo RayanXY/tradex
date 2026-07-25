@@ -82,6 +82,61 @@ const VariantOverlay = ({ variant, types }: Props) => {
     );
   }
 
+  if (variant === 'pokeball' || variant === 'masterball') {
+    const iconSrc = `/variants/${variant}-light.svg`;
+    const color = variant === 'masterball' ? '#a855f7' : '#e3350d';
+
+    const icons = [];
+    const cols = 4;
+    const rows = 6;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const offset = row % 2 === 0 ? 0 : 12.5;
+        icons.push({
+          top: `${row * 17 - 2}%`,
+          left: `${col * 25 + offset - 5}%`,
+        });
+      }
+    }
+
+    return (
+      <>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '0.75rem',
+          pointerEvents: 'none',
+          opacity: variant === 'masterball' ? 0.6 : 0.5,
+          mixBlendMode: 'overlay',
+          background: `linear-gradient(115deg, transparent 15%, ${color} 50%, transparent 85%)`,
+          backgroundSize: '200% 200%',
+          animation: 'holo-shift 8s ease infinite',
+          zIndex: 0,
+        }} />
+
+        {icons.map((icon, i) => (
+          <img
+            key={i}
+            src={iconSrc}
+            alt=""
+            style={{
+              position: 'absolute',
+              top: icon.top,
+              left: icon.left,
+              width: 18,
+              height: 18,
+              opacity: variant === 'masterball' ? 0.18 : 0.14,
+              transform: 'rotate(45deg)',
+              filter: `drop-shadow(0 0 2px ${color})`,
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          />
+        ))}
+      </>
+    );
+  }
+
   return <div className={`variant-overlay variant-${variant as CardVariant}`} />;
 }
 
