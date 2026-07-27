@@ -4,6 +4,7 @@ import type { TradexCard } from '../../types'
 import useCardDetails from '../../hooks/useCardDetails'
 import type { PokemonCard } from '../../hooks/usePokemonSearch'
 import { conditionColor, languageCountry, getLocalizedImageUrl } from '../../constants/cards'
+import VariantOverlay from './VariantOverlay'
 
 type CardModalCard =
   | TradexCard
@@ -92,11 +93,17 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
       onClick={onClose}
     >
       <div
-        className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl w-full max-w-sm p-3 flex flex-col gap-2 my-auto relative overflow-visible touch-action-none"
+        className="relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl w-full max-w-sm p-3 flex flex-col gap-2 my-auto touch-action-none"
         onClick={e => e.stopPropagation()}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
+        {/* Variant Overlay */}
+        {isTradex && card.variant && card.variant !== 'normal' && (
+          <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0">
+            <VariantOverlay variant={card.variant} types={(card as TradexCard).types} />
+          </div>
+        )}
         {/* Prev */}
         {hasPrev && (
           <button
@@ -124,7 +131,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
         {/* Fechar */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer"
+          className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer z-20"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M18 6L6 18M6 6l12 12"/>
@@ -132,7 +139,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
         </button>
 
         {/* 1. Nome */}
-        <div className="px-8 text-center">
+        <div className="relative z-10 px-8 text-center">
           <p className="font-bold text-[#f0f0f0] text-xl leading-tight">
             {card.name}
             {localId && <span className="text-[#555] font-normal text-base ml-2">#{localId}</span>}
@@ -176,7 +183,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
         </div>
 
         {/* 4. Accordion de detalhes */}
-        <div className="border border-[#2a2a2a] rounded-xl overflow-hidden">
+        <div className="relative z-10 border border-[#2a2a2a] rounded-xl overflow-hidden bg-[#1a1a1a]/90">
           <button
             onClick={() => setAccordionOpen(prev => !prev)}
             className="w-full flex items-center justify-between px-4 py-3 text-sm text-[#888] hover:text-[#f0f0f0] hover:bg-[#2a2a2a] transition-colors cursor-pointer"
