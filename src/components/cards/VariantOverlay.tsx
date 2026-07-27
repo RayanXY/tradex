@@ -2,16 +2,16 @@ import './CardItem.css';
 import type { CardVariant } from '../../constants/variants';
 
 const TYPE_COLORS: Record<string, string> = {
-  grass:     '#7AC74C',
-  fire:      '#EE8130',
-  water:     '#6390F0',
-  lightning: '#FAB536',
-  psychic:   '#F95587',
-  fighting:  '#C22E28',
-  darkness:  '#705746',
-  metal:     '#B7B7CE',
-  dragon:    '#C6A114',
-  colorless: '#A8A77A',
+  grass:     '#48FC12',
+  fire:      '#FF230A',
+  water:     '#26DBFF',
+  lightning: '#FFEF08',
+  psychic:   '#FCB8E3',
+  fighting:  '#FFC645',
+  darkness:  '#04B9E0',
+  metal:     '#E5E8E4',
+  dragon:    '#D9CC21',
+  colorless: '#FFFFFF',
 };
 
 const ENERGY_ICONS = [
@@ -148,6 +148,63 @@ const VariantOverlay = ({ variant, types }: Props) => {
               opacity: variant === 'masterball' ? 0.18 : 0.14,
               transform: 'rotate(45deg)',
               filter: `drop-shadow(0 0 2px ${color})`,
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          />
+        ))}
+      </>
+    );
+  }
+
+  if (variant === 'promo' || variant === 'pre_release') {
+    const iconSrc = variant === 'promo' ? '/variants/promo.png' : '/variants/play-pokemon.png';
+    const color = variant === 'promo' ? '#f4d03f' : '#7c3aed';
+
+    const icons = [];
+    const cols = 4;
+    const rows = 6;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const offset = row % 2 === 0 ? 0 : 12.5;
+        icons.push({
+          top: `${row * 17 - 2}%`,
+          left: `${col * 25 + offset - 5}%`,
+        });
+      }
+    }
+
+    return (
+      <>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '0.75rem',
+          pointerEvents: 'none',
+          opacity: variant === 'pre_release' ? 0.6 : 0.5,
+          mixBlendMode: 'overlay',
+          background: `linear-gradient(115deg, transparent 15%, ${color} 50%, transparent 85%)`,
+          backgroundSize: '200% 200%',
+          animation: 'holo-shift 8s ease infinite',
+          zIndex: 0,
+        }} />
+
+        {icons.map((icon, i) => (
+          <img
+            key={i}
+            src={iconSrc}
+            alt=""
+            style={{
+              position: 'absolute',
+              top: icon.top,
+              left: icon.left,
+              width: 18,
+              height: 18,
+              opacity: variant === 'pre_release' ? 0.18 : 0.14,
+              transform: 'rotate(45deg)',
+              filter: variant === 'promo'
+                ? `drop-shadow(0 0 2px ${color}) drop-shadow(0 0 1px white)`
+                : `drop-shadow(0 0 2px ${color})`,
               pointerEvents: 'none',
               zIndex: 0,
             }}

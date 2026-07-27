@@ -76,7 +76,7 @@ const CardItem = ({
         <div>
           {card.price != null
             ? <p className="text-sm font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
-            : <p className="text-sm text-[#555]">A negociar</p>
+            : <p className="text-sm text-[#888]">A negociar</p>
           }
         </div>
         <div className="flex items-center gap-2">
