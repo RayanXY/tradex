@@ -101,7 +101,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
         {/* Variant Overlay */}
         {isTradex && card.variant && card.variant !== 'normal' && (
           <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0">
-            <VariantOverlay variant={card.variant} types={(card as TradexCard).types} />
+            <VariantOverlay variant={card.variant} types={(card as TradexCard).types} size='modal' />
           </div>
         )}
         {/* Prev */}
@@ -140,11 +140,11 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
 
         {/* 1. Nome */}
         <div className="relative z-10 px-8 text-center">
-          <p className="font-bold text-[#f0f0f0] text-xl leading-tight">
+          <p className="font-bold text-[#f0f0f0] text-xl leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
             {card.name}
             {localId && <span className="text-[#555] font-normal text-base ml-2">#{localId}</span>}
           </p>
-          <p className="text-sm text-[#888]">{setName}</p>
+          <p className="text-sm text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{setName}</p>
         </div>
 
         {/* 2. Imagem com placeholder */}
@@ -169,9 +169,11 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
 
         {/* Contador */}
         {cards.length > 1 && (
-          <p className="text-center text-xs text-[#555]">
-            {currentIndex + 1} / {cards.length}
-          </p>
+          <div className="relative z-10">
+            <p className="text-center text-xs text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+              {currentIndex + 1} / {cards.length}
+            </p>
+          </div>
         )}
 
         {/* 3. Logo do set */}
@@ -289,9 +291,9 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
           )}
         </div>
 
-        {/* 5. Negociação — só no modo TradexCard */}
+        {/* 5. Negociação */}
         {isTradex && c && (
-          <div className="pt-2 border-t border-[#2a2a2a] flex flex-col gap-2">
+          <div className="relative z-10 pt-2 border-t border-[#2a2a2a] flex flex-col gap-2 bg-[#1a1a1a]/70 rounded-xl px-2 -mx-1 pb-1">
             <div className="flex items-center gap-3">
               <span className={`text-xs font-bold px-2 py-1 rounded ${card.type === 'sell' ? 'bg-[#e3350d]/20 text-[#e3350d]' : 'bg-[#3b82f6]/20 text-[#3b82f6]'}`}>
                 {card.type === 'sell' ? 'Vendo' : 'Procuro'}
@@ -310,7 +312,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
             </div>
             {card.price != null
               ? <p className="text-xl font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
-              : <p className="text-sm text-[#555]">Valor a negociar</p>
+              : <p className="text-sm text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>Valor a negociar</p>
             }
           </div>
         )}

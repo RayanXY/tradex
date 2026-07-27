@@ -1,6 +1,7 @@
 import './CardItem.css';
 import type { CardVariant } from '../../constants/variants';
 
+
 const TYPE_COLORS: Record<string, string> = {
   grass:     '#48FC12',
   fire:      '#FF230A',
@@ -31,11 +32,12 @@ const ENERGY_ICONS = [
 ];
 
 interface Props {
-  variant: string;
-  types?: string[] | null;
+  variant: string,
+  types?: string[] | null,
+  size?: 'card' | 'modal'
 }
 
-const VariantOverlay = ({ variant, types }: Props) => {
+const VariantOverlay = ({ variant, types, size }: Props) => {
   if (!variant || variant === 'normal') return null;
 
   if (variant === 'reverse') {
@@ -107,13 +109,13 @@ const VariantOverlay = ({ variant, types }: Props) => {
     const color = variant === 'masterball' ? '#a855f7' : '#e3350d';
 
     const icons = [];
-    const cols = 4;
-    const rows = 6;
+    const cols = size === 'modal' ? 8 : 4;
+    const rows = size === 'modal' ? 12 : 6;
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const offset = row % 2 === 0 ? 0 : 12.5;
         icons.push({
-          top: `${row * 17 - 2}%`,
+          top: size === 'modal' ? `${row * 10 - 2}%` : `${row * 17 - 2}%`,
           left: `${col * 25 + offset - 5}%`,
         });
       }
@@ -162,13 +164,13 @@ const VariantOverlay = ({ variant, types }: Props) => {
     const color = variant === 'promo' ? '#f4d03f' : '#7c3aed';
 
     const icons = [];
-    const cols = 4;
-    const rows = 6;
+    const cols = size === 'modal' ? 8 : 4;
+    const rows = size === 'modal' ? 12 : 6;
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const offset = row % 2 === 0 ? 0 : 12.5;
         icons.push({
-          top: `${row * 17 - 2}%`,
+          top: size === 'modal' ? `${row * 10 - 2}%` : `${row * 17 - 2}%`,
           left: `${col * 25 + offset - 5}%`,
         });
       }
