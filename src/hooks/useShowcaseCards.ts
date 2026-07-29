@@ -43,7 +43,8 @@ export const useShowcaseCards = (
         .eq('user_id', userId)
         .eq('active', true)
         .eq('type', type)
-        .order('set_name', { ascending: true });
+        .order('set_name', { ascending: true })
+        .order('tcg_card_id', { ascending: true });
 
       const allCards: TradexCard[] = cardsData ?? [];
       setCards(allCards);

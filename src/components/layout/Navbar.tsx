@@ -28,7 +28,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="border-b border-[#2a2a2a] px-6 py-4">
+    <header className="sticky top-0 z-50 bg-[#0d0d0d] border-b border-[#2a2a2a] px-6 py-4">
       <div className="flex items-center gap-4">
 
         {/* Logo */}
@@ -66,10 +66,10 @@ const Navbar = () => {
             <>
               <Link to="/" className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">Vendedores</Link>
               {user.role !== 'admin' && (
-                <Link to={`/u/${user.slug}`} className="text-sm text-[#f4d03f] hover:underline">Ver mostruário</Link>
+                <Link to={`/u/${user.slug}`} className="text-sm text-[#f4d03f] hover:underline">Vitrine</Link>
               )}
               <Link to={user.role !== 'admin' ? '/dashboard' : '/admin'} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">
-                {user.name}
+                Inventário
               </Link>
               <button onClick={handleLogout} className="text-sm text-[#888] hover:text-[#e3350d] transition-colors cursor-pointer">
                 Sair
@@ -132,10 +132,10 @@ const Navbar = () => {
             <>
               <Link to="/" onClick={closeMenu} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">Vendedores</Link>
               {user.role !== 'admin' && (
-                <Link to={`/u/${user.slug}`} onClick={closeMenu} className="text-sm text-[#f4d03f] hover:underline">Ver mostruário</Link>
+                <Link to={`/u/${user.slug}`} onClick={closeMenu} className="text-sm text-[#f4d03f] hover:underline">Vitrine</Link>
               )}
               <Link to={user.role !== 'admin' ? '/dashboard' : '/admin'} onClick={closeMenu} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">
-                {user.name}
+                Inventário
               </Link>
               <button onClick={handleLogout} className="text-left text-sm text-[#888] hover:text-[#e3350d] transition-colors cursor-pointer">
                 Sair
