@@ -52,7 +52,7 @@ export const useShowcaseCards = (
 
       const { data: setsData } = await supabase
         .from('sets')
-        .select('id, name, logo_url')
+        .select('id, name, logo_url, release_date')
         .in('id', setIds);
 
       const setsMap = new Map<string, Pick<SetItem, 'name' | 'logo_url'>>(
@@ -74,7 +74,13 @@ export const useShowcaseCards = (
         groupMap.get(setId)!.cards.push(card);
       }
 
-      setGroups([...groupMap.values()]);
+      const sortedGroups = [...groupMap.values()].sort((a, b) => {
+        const dateA = setsData?.find(s => s.id === a.setId)?.release_date ?? '';
+        const dateB = setsData?.find(s => s.id === b.setId)?.release_date ?? '';
+        return dateB.localeCompare(dateA); // mais recente primeiro
+      });
+      setGroups(sortedGroups);
+
       setLoading(false);
     };
 

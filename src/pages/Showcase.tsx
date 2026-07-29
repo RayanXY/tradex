@@ -7,18 +7,21 @@ import CardModal from '../components/cards/CardModal';
 import Tabs from '../components/ui/Tabs';
 import { useShowcaseCards } from '../hooks/useShowcaseCards';
 import type { TradexCard, Seller } from '../types';
+import Pagination from '../components/ui/Pagination';
 
 type ViewMode = 'grade' | 'sets';
 
 const Showcase = () => {
+  const [gradePage, setGradePage] = useState(1);
+  const [modalIndex, setModalIndex] = useState(0);
   const [notFound, setNotFound] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [gradeSearch, setGradeSearch] = useState('');
   const [loadingSeller, setLoadingSeller] = useState(true);
   const [seller, setSeller] = useState<Seller | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grade');
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  
-  const [modalIndex, setModalIndex] = useState(0);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [openSets, setOpenSets] = useState<Set<string>>(new Set());
 
   const openModal = (card: TradexCard) => {
     setModalIndex(cards.findIndex(c => c.id === card.id));
@@ -48,6 +51,12 @@ const Showcase = () => {
 
     loadSeller();
   }, [phone]);
+  
+  useEffect(() => {
+    if (groups.length > 0) {
+      setOpenSets(new Set([groups[0].setId]));
+    }
+  }, [groups]);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -134,36 +143,91 @@ const Showcase = () => {
                   { id: 'sets', label: 'Por set' },
                 ]}
                 active={viewMode}
-                onChange={id => setViewMode(id as ViewMode)}
+                onChange={id => {
+                  setViewMode(id as ViewMode);
+                  setGradePage(1);
+                  setGradeSearch('');
+                }}
               />
             </div>
 
-            {viewMode === 'grade' && renderCards(cards)}
+            {viewMode === 'grade' && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Buscar por nome ou set..."
+                  value={gradeSearch}
+                  onChange={e => { setGradeSearch(e.target.value); setGradePage(1); }}
+                  className="w-full mb-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
+                />
+                {(() => {
+                  const isSearching = gradeSearch.trim().length > 0;
+                  const filtered = isSearching
+                    ? cards.filter(c =>
+                        c.name.toLowerCase().includes(gradeSearch.toLowerCase()) ||
+                        c.set_name.toLowerCase().includes(gradeSearch.toLowerCase())
+                      )
+                    : cards;
+                  const totalPages = Math.ceil(filtered.length / 20);
+                  const paginated = isSearching ? filtered : filtered.slice((gradePage - 1) * 20, gradePage * 20);
+                  return (
+                    <>
+                      {paginated.length === 0
+                        ? <p className="text-sm text-[#555]">Nenhuma carta encontrada.</p>
+                        : renderCards(paginated)
+                      }
+                      {!isSearching && totalPages > 1 && (
+                        <Pagination current={gradePage} total={totalPages} onChange={setGradePage} />
+                      )}
+                    </>
+                  );
+                })()}
+              </>
+            )}
 
             {viewMode === 'sets' && (
-              <div className="flex flex-col gap-10">
-                {groups.map((group, index) => (
-                  <div key={group.setId} className={index !== 0 ? 'border-t border-[#222] pt-10' : ''}>
-                    <div className="flex items-center gap-3 mb-4">
-                      {group.logoUrl ? (
-                        <>
-                          <img
-                            src={group.logoUrl}
-                            alt={group.setName}
-                            className="h-10 object-contain"
-                          />
-                          <span className="text-xl font-semibold text-[#f0f0f0]">{group.setName}</span>
-                        </>
-                      ) : (
-                        <span className="text-xl font-semibold text-[#f0f0f0]">{group.setName}</span>
+              <div className="flex flex-col gap-2">
+                {groups.map((group) => {
+                  const isOpen = openSets.has(group.setId);
+                  return (
+                    <div key={group.setId} className="border border-[#222] rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setOpenSets(prev => {
+                          const next = new Set(prev);
+                          next.has(group.setId) ? next.delete(group.setId) : next.add(group.setId);
+                          return next;
+                        })}
+                        className="w-full flex items-center justify-between px-4 py-3 bg-[#1a1a1a] hover:bg-[#222] transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          {group.logoUrl ? (
+                            <img src={group.logoUrl} alt={group.setName} className="h-8 object-contain" />
+                          ) : (
+                            <span className="text-sm font-semibold text-[#f0f0f0]">{group.setName}</span>
+                          )}
+                          {group.logoUrl && (
+                            <span className="text-sm font-semibold text-[#f0f0f0]">{group.setName}</span>
+                          )}
+                          <span className="text-xs text-[#555]">
+                            {group.cards.length} {group.cards.length === 1 ? 'carta' : 'cartas'}
+                          </span>
+                        </div>
+                        <svg
+                          width="12" height="12" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="2.5"
+                          className={`text-[#555] transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                        >
+                          <path d="M6 9l6 6 6-6" />
+                        </svg>
+                      </button>
+                      {isOpen && (
+                        <div className="p-4">
+                          {renderCards(group.cards)}
+                        </div>
                       )}
-                      <span className="text-xs text-[#555]">
-                        {group.cards.length} {group.cards.length === 1 ? 'carta' : 'cartas'}
-                      </span>
                     </div>
-                    {renderCards(group.cards)}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
