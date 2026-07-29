@@ -66,11 +66,14 @@ const Navbar = () => {
             <>
               <Link to="/" className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">Vendedores</Link>
               {user.role !== 'admin' && (
-                <Link to={`/u/${user.slug}`} className="text-sm text-[#f4d03f] hover:underline">Vitrine</Link>
+                <>
+                  <Link to={`/u/${user.slug}`} className="text-sm text-[#f4d03f] hover:underline">Vitrine</Link>
+                  <Link to={user.role !== 'admin' ? '/dashboard' : '/admin'} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">
+                    Inventário
+                  </Link>
+                </>
               )}
-              <Link to={user.role !== 'admin' ? '/dashboard' : '/admin'} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">
-                Inventário
-              </Link>
+              
               <button onClick={handleLogout} className="text-sm text-[#888] hover:text-[#e3350d] transition-colors cursor-pointer">
                 Sair
               </button>
@@ -132,11 +135,13 @@ const Navbar = () => {
             <>
               <Link to="/" onClick={closeMenu} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">Vendedores</Link>
               {user.role !== 'admin' && (
-                <Link to={`/u/${user.slug}`} onClick={closeMenu} className="text-sm text-[#f4d03f] hover:underline">Vitrine</Link>
+                <>
+                  <Link to={`/u/${user.slug}`} onClick={closeMenu} className="text-sm text-[#f4d03f] hover:underline">Vitrine</Link>
+                  <Link to={user.role !== 'admin' ? '/dashboard' : '/admin'} onClick={closeMenu} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">
+                    Inventário
+                  </Link>
+                </>
               )}
-              <Link to={user.role !== 'admin' ? '/dashboard' : '/admin'} onClick={closeMenu} className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">
-                Inventário
-              </Link>
               <button onClick={handleLogout} className="text-left text-sm text-[#888] hover:text-[#e3350d] transition-colors cursor-pointer">
                 Sair
               </button>

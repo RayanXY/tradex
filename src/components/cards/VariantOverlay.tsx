@@ -160,7 +160,7 @@ const VariantOverlay = ({ variant, types, size }: Props) => {
   }
 
   if (variant === 'promo' || variant === 'pre_release') {
-    const iconSrc = variant === 'promo' ? '/variants/promo.png' : '/variants/play-pokemon.png';
+    const iconSrc = variant === 'promo' ? '/variants/promo.webp' : '/variants/play-pokemon.png';
     const color = variant === 'promo' ? '#f4d03f' : '#7c3aed';
 
     const icons = [];

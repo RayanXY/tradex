@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import Navbar from '../components/layout/Navbar'
 import Tabs from '../components/ui/Tabs'
 import { invalidateSetCache } from '../hooks/usePokemonSearch'
+import SetLogo from '../components/ui/SetLogo'
 
 interface SetItem {
   id: string,
@@ -291,11 +292,7 @@ const Admin = () => {
                   <tr key={set.id} className="border-b border-[#2a2a2a] last:border-0 hover:bg-[#222] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        {set.logo_url ? (
-                          <img src={set.logo_url} alt={set.name} className="h-8 w-20 object-contain" />
-                        ) : (
-                          <div className="h-8 w-20 bg-[#2a2a2a] rounded" />
-                        )}
+                        <SetLogo logoUrl={set.logo_url} name={set.name} />
                         <div>
                           <p className="text-[#f0f0f0] font-medium">{set.name}</p>
                           <p className="text-xs text-[#555] font-mono">{set.id}</p>

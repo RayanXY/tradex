@@ -8,6 +8,7 @@ import Tabs from '../components/ui/Tabs';
 import { useShowcaseCards } from '../hooks/useShowcaseCards';
 import type { TradexCard, Seller } from '../types';
 import Pagination from '../components/ui/Pagination';
+import SetLogo from '../components/ui/SetLogo';
 
 type ViewMode = 'grade' | 'sets';
 
@@ -200,9 +201,7 @@ const Wishlist = () => {
                         className="w-full flex items-center justify-between px-4 py-3 bg-[#1a1a1a] hover:bg-[#222] transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-3">
-                          {group.logoUrl && (
-                            <img src={group.logoUrl} alt={group.setName} className="h-8 object-contain" />
-                          )}
+                          <SetLogo logoUrl={group.logoUrl} name={group.setName} />
                           <span className="text-sm font-semibold text-[#f0f0f0]">{group.setName}</span>
                           <span className="text-xs text-[#555]">
                             {group.cards.length} {group.cards.length === 1 ? 'carta' : 'cartas'}

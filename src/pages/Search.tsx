@@ -10,6 +10,7 @@ import type { SetItem, TradexCard } from '../types'
 import useSets from '../hooks/useSets'
 import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
 import { VARIANT_OPTIONS } from '../constants/variants';
+import SetLogo from '../components/ui/SetLogo'
 
 interface QueuedCard {
   card: PokemonCard,
@@ -24,6 +25,48 @@ interface QueuedCard {
 }
 
 type InventoryCard = Pick<TradexCard, 'id' | 'tcg_card_id' | 'type'>;
+
+interface SidebarContentProps {
+  seriesOrder: string[];
+  openSeries: Set<string>;
+  selectedSet: SetItem | null;
+  toggleSerie: (serie: string) => void;
+  setsBySerie: (serie: string) => SetItem[];
+  handleSetClick: (setId: string) => void;
+}
+
+const SidebarContent = ({ seriesOrder, openSeries, selectedSet, toggleSerie, setsBySerie, handleSetClick }: SidebarContentProps) => (
+  <div className="flex flex-col gap-1">
+    {seriesOrder.map(serie => (
+      <div key={serie}>
+        <button
+          onClick={() => toggleSerie(serie)}
+          className="w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[#888] hover:text-[#f0f0f0] hover:bg-[#1a1a1a] transition-colors cursor-pointer"
+        >
+          <span>{serie}</span>
+          <span className="text-xs">{openSeries.has(serie) ? '▲' : '▼'}</span>
+        </button>
+        {openSeries.has(serie) && (
+          <div className="ml-3 flex flex-col gap-0.5 mb-1">
+            {setsBySerie(serie).map(set => (
+              <button
+                key={set.id}
+                onClick={() => handleSetClick(set.id)}
+                className={`text-left px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                  selectedSet?.id === set.id
+                    ? 'text-[#f0f0f0] bg-[#2a2a2a]'
+                    : 'text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a]'
+                }`}
+              >
+                {set.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+);
 
 const Search = () => {
   const { user } = useAuth();
@@ -233,38 +276,7 @@ const Search = () => {
     setSaving(false);
   }
 
-  const SidebarContent = () => (
-    <div className="flex flex-col gap-1">
-      {seriesOrder.map(serie => (
-        <div key={serie}>
-          <button
-            onClick={() => toggleSerie(serie)}
-            className="w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[#888] hover:text-[#f0f0f0] hover:bg-[#1a1a1a] transition-colors cursor-pointer"
-          >
-            <span>{serie}</span>
-            <span className="text-xs">{openSeries.has(serie) ? '▲' : '▼'}</span>
-          </button>
-          {openSeries.has(serie) && (
-            <div className="ml-3 flex flex-col gap-0.5 mb-1">
-              {setsBySerie(serie).map(set => (
-                <button
-                  key={set.id}
-                  onClick={() => handleSetClick(set.id)}
-                  className={`text-left px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
-                    selectedSet?.id === set.id
-                      ? 'text-[#f0f0f0] bg-[#2a2a2a]'
-                      : 'text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a]'
-                  }`}
-                >
-                  {set.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
+  
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
@@ -280,7 +292,16 @@ const Search = () => {
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Sets</h2>
           <button onClick={() => setDrawerOpen(false)} className="text-[#555] hover:text-[#f0f0f0] cursor-pointer text-lg">✕</button>
         </div>
-        <div className="p-3"><SidebarContent /></div>
+        <div className="p-3">
+          <SidebarContent
+            seriesOrder={seriesOrder}
+            openSeries={openSeries}
+            selectedSet={selectedSet}
+            toggleSerie={toggleSerie}
+            setsBySerie={setsBySerie}
+            handleSetClick={handleSetClick}
+          />  
+        </div>
       </div>
 
       {/* Queue drawer */}
@@ -367,7 +388,14 @@ const Search = () => {
 
         <aside className="hidden md:block w-56 shrink-0">
           <h2 className="text-xs font-semibold text-[#888] uppercase tracking-wider mb-3">Sets</h2>
-          <SidebarContent />
+          <SidebarContent
+            seriesOrder={seriesOrder}
+            openSeries={openSeries}
+            selectedSet={selectedSet}
+            toggleSerie={toggleSerie}
+            setsBySerie={setsBySerie}
+            handleSetClick={handleSetClick}
+          />
         </aside>
 
         <div className="flex-1 min-w-0">
@@ -400,11 +428,7 @@ const Search = () => {
           {isSetSearch && selectedSet && (
             <>
               <div className="flex items-center gap-4 mb-4 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
-                {selectedSet.logo_url ? (
-                  <img src={selectedSet.logo_url} alt={selectedSet.name} className="h-10 object-contain" />
-                ) : (
-                  <div className="h-10 w-24 bg-[#2a2a2a] rounded" />
-                )}
+                <SetLogo logoUrl={selectedSet.logo_url ?? null} name={selectedSet.name} />
                 <div>
                   <p className="font-semibold text-[#f0f0f0]">{selectedSet.name}</p>
                   <p className="text-xs text-[#888]">
