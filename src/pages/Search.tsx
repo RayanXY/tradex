@@ -13,6 +13,7 @@ import { VARIANT_OPTIONS } from '../constants/variants';
 import SetLogo from '../components/ui/SetLogo'
 
 interface QueuedCard {
+  uid: string,
   card: PokemonCard,
   price: string,
   quantity: string,
@@ -78,7 +79,9 @@ const Search = () => {
   const [setFilter, setSetFilter] = useState('');
   const [loadingSet, setLoadingSet] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const [queue, setQueue] = useState<QueuedCard[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
   const [inventory, setInventory] = useState<InventoryCard[]>([]);
@@ -86,9 +89,6 @@ const Search = () => {
   const [openSeries, setOpenSeries] = useState<Set<string>>(new Set());
   const [selectedSet, setSelectedSet] = useState<SetItem | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
-
-  const [previewIndex, setPreviewIndex] = useState(0);
-  const [previewOpen, setPreviewOpen] = useState(false);
 
   const openPreview = (card: PokemonCard) => {
     setPreviewIndex(displayResults.findIndex(c => c.id === card.id));
@@ -199,11 +199,9 @@ const Search = () => {
     : sortedResults.slice((page - 1) * 20, page * 20);
 
   const handleSelectCard = async (card: PokemonCard) => {
-    if (queue.some(q => q.card.id === card.id)) {
-      setQueue(prev => prev.filter(q => q.card.id !== card.id));
-      return;
-    }
+    const uid = crypto.randomUUID();
     setQueue(prev => [...prev, {
+      uid,
       card,
       price: '',
       quantity: '1',
@@ -220,7 +218,7 @@ const Search = () => {
       if (res.ok) {
         const data = await res.json();
         setQueue(prev => prev.map(q =>
-          q.card.id === card.id ? { ...q, rarity: data.rarity ?? null, types: data.types ?? null } : q
+          q.uid === uid ? { ...q, rarity: data.rarity ?? null, types: data.types ?? null } : q
         ));
       }
     } catch {
@@ -228,9 +226,9 @@ const Search = () => {
     }
   }
 
-  const handleQueueUpdate = (cardId: string, field: 'price' | 'quantity' | 'type' | 'condition' | 'language' | 'variant', value: string) => {
+  const handleQueueUpdate = (uid: string, field: 'price' | 'quantity' | 'type' | 'condition' | 'language' | 'variant', value: string) => {
     setQueue(prev => prev.map(q => {
-      if (q.card.id !== cardId) return q;
+      if (q.uid !== uid) return q;
       const updated = { ...q, [field]: value };
       if (field === 'type' && value === 'want') updated.condition = 'ANY';
       if (field === 'type' && value === 'sell' && q.condition === 'ANY') updated.condition = 'NM';
@@ -238,8 +236,8 @@ const Search = () => {
     }));
   }
 
-  const handleQueueRemove = (cardId: string) => {
-    setQueue(prev => prev.filter(q => q.card.id !== cardId));
+  const handleQueueRemove = (uid: string) => {
+    setQueue(prev => prev.filter(q => q.uid !== uid));
   }
 
   const handleAddAll = async () => {
@@ -265,6 +263,26 @@ const Search = () => {
       types: q.types
     }));
 
+    // Verifica duplicatas dentro da própria fila
+    const queueKeys = rows.map(r => `${r.tcg_card_id}|${r.type}|${r.condition}|${r.language}|${r.variant}`);
+    const hasDuplicateInQueue = queueKeys.length !== new Set(queueKeys).size;
+
+    // Verifica duplicatas contra o inventário existente
+    const { data: existing } = await supabase
+      .from('cards')
+      .select('tcg_card_id, type, condition, language, variant')
+      .eq('user_id', user.id)
+      .eq('active', true);
+
+    const existingKeys = new Set((existing ?? []).map(c => `${c.tcg_card_id}|${c.type}|${c.condition}|${c.language}|${c.variant}`));
+    const hasDuplicateWithInventory = queueKeys.some(k => existingKeys.has(k));
+
+    if (hasDuplicateInQueue || hasDuplicateWithInventory) {
+      alert('Uma ou mais cartas já existem no seu inventário com a mesma condição, língua e variante. Ajuste antes de salvar.');
+      setSaving(false);
+      return;
+    }
+
     const { data, error: supabaseError } = await supabase.from('cards').insert(rows).select();
 
     if (!supabaseError && data) {
@@ -275,8 +293,6 @@ const Search = () => {
 
     setSaving(false);
   }
-
-  
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
@@ -315,8 +331,8 @@ const Search = () => {
             <p className="text-sm text-[#555]">Nenhuma carta selecionada.</p>
           ) : (
             <>
-              {queue.map(({ card, price, quantity, type, condition, language, variant }) => (
-                <div key={card.id} className="flex flex-col gap-2.5 border-b border-[#2a2a2a] pb-4 last:border-0 last:pb-0">
+              {queue.map(({ uid, card, price, quantity, type, condition, language, variant }) => (
+                <div key={uid} className="flex flex-col gap-2.5 border-b border-[#2a2a2a] pb-4 last:border-0 last:pb-0">
                   {/* Cabeçalho */}
                   <div className="flex items-center justify-between">
                     <div>
@@ -324,7 +340,7 @@ const Search = () => {
                       <span className="text-xs text-[#555] mx-1">·</span>
                       <span className="text-xs text-[#888]">{(card.set.ptcgo_code ?? card.set.id).toUpperCase()} #{card.localId}</span>
                     </div>
-                    <button onClick={() => handleQueueRemove(card.id)} className="text-xs text-[#555] hover:text-[#e3350d] cursor-pointer">✕</button>
+                    <button onClick={() => handleQueueRemove(uid)} className="text-xs text-[#555] hover:text-[#e3350d] cursor-pointer">✕</button>
                   </div>
 
                   {/* Linha 1: Tipo + Variante */}
@@ -334,9 +350,9 @@ const Search = () => {
                       <span className="text-[10px] text-[#555] uppercase tracking-wider">Variante</span>
                     </div>
                     <div className="grid grid-cols-[1fr_1fr_120px] gap-2 items-center">
-                      <button onClick={() => handleQueueUpdate(card.id, 'type', 'sell')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Vendo</button>
-                      <button onClick={() => handleQueueUpdate(card.id, 'type', 'want')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Procuro</button>
-                      <select value={variant} onChange={e => handleQueueUpdate(card.id, 'variant', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                      <button onClick={() => handleQueueUpdate(uid, 'type', 'sell')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Vendo</button>
+                      <button onClick={() => handleQueueUpdate(uid, 'type', 'want')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Procuro</button>
+                      <select value={variant} onChange={e => handleQueueUpdate(uid, 'variant', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
                         {VARIANT_OPTIONS.map(v => (
                           <option key={v.value} value={v.value}>{v.label}</option>
                         ))}
@@ -353,9 +369,9 @@ const Search = () => {
                       <span className="text-[10px] text-[#555] uppercase tracking-wider">Língua</span>
                     </div>
                     <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2 items-center">
-                      <input type="number" placeholder={type === 'sell' ? 'R$' : 'Até R$'} value={price} onChange={e => handleQueueUpdate(card.id, 'price', e.target.value)} min="0" step="0.01" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
-                      <input type="number" placeholder="1" value={quantity} onChange={e => handleQueueUpdate(card.id, 'quantity', e.target.value)} min="1" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
-                      <select value={condition} onChange={e => handleQueueUpdate(card.id, 'condition', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                      <input type="number" placeholder={type === 'sell' ? 'R$' : 'Até R$'} value={price} onChange={e => handleQueueUpdate(uid, 'price', e.target.value)} min="0" step="0.01" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
+                      <input type="number" placeholder="1" value={quantity} onChange={e => handleQueueUpdate(uid, 'quantity', e.target.value)} min="1" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
+                      <select value={condition} onChange={e => handleQueueUpdate(uid, 'condition', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
                         {type === 'want' && <option value="ANY">?</option>}
                         <option value="M">M</option>
                         <option value="NM">NM</option>
@@ -364,13 +380,13 @@ const Search = () => {
                         <option value="HP">HP</option>
                         <option value="DMG">DMG</option>
                       </select>
-                      <select value={language} onChange={e => handleQueueUpdate(card.id, 'language', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                      <select value={language} onChange={e => handleQueueUpdate(uid, 'language', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
                         <option value="BR">BR</option>
                         <option value="EN">EN</option>
                         <option value="JP">JP</option>
                       </select>
                     </div>
-    </div>
+                  </div>
                 </div>
               ))}
               <div className="flex gap-3 pt-2">
@@ -385,7 +401,6 @@ const Search = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6 md:flex md:gap-6">
-
         <aside className="hidden md:block w-56 shrink-0">
           <h2 className="text-xs font-semibold text-[#888] uppercase tracking-wider mb-3">Sets</h2>
           <SidebarContent
@@ -399,7 +414,6 @@ const Search = () => {
         </aside>
 
         <div className="flex-1 min-w-0">
-
           {/* Barra de controles: botão sets mobile + filtros + ordenação */}
           <div className="flex items-center gap-2 mb-6 flex-wrap">
             <button
@@ -462,51 +476,91 @@ const Search = () => {
               )}
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
                 {displayResults.map(card => {
-                  const inQueue = queue.some(q => q.card.id === card.id);
-                  const inSell = inventory.some(c => c.tcg_card_id === card.id && c.type === 'sell');
-                  const inWant = inventory.some(c => c.tcg_card_id === card.id && c.type === 'want');
-                  const inInventory = inSell || inWant;
+                  return (() => {
+                    const inQueue = queue.some(q => q.card.id === card.id);
+                    const inSell = inventory.some(c => c.tcg_card_id === card.id && c.type === 'sell');
+                    const inWant = inventory.some(c => c.tcg_card_id === card.id && c.type === 'want');
+                    const both = inSell && inWant;
 
-                  return (
-                    <div
-                      key={card.id}
-                      onClick={() => !inInventory && handleSelectCard(card)}
-                      className={`group flex flex-col items-center gap-1 p-2 rounded-lg bg-[#1a1a1a] transition-colors ${
-                        inInventory
-                          ? `${inSell ? 'border border-[#e3350d]' : 'border border-[#3b82f6]'} opacity-40 cursor-not-allowed`
-                          : inQueue
-                          ? 'border-2 border-[#e3350d] ring-1 ring-[#e3350d]/20 cursor-pointer'
-                          : 'border border-[#2a2a2a] hover:border-[#e3350d] cursor-pointer'
-                      }`}
-                    >
-                      <div className="relative w-full">
-                        <CardImage src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="rounded" language="BR" />
-                        {inQueue && (
-                          <div className="absolute inset-0 flex items-center justify-center rounded bg-black/40">
-                            <div className="w-8 h-8 rounded-full bg-[#e3350d] flex items-center justify-center">
-                              <span className="text-white text-sm font-bold">✓</span>
-                            </div>
-                          </div>
-                        )}
-                        <button
-                          onClick={e => { e.stopPropagation(); openPreview(card); }}
-                          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 flex items-center justify-center cursor-pointer z-10"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-                          </svg>
-                        </button>
+                    const borderClass = inQueue
+                      ? both
+                        ? 'border-2 border-transparent'
+                        : inSell
+                        ? 'border-2 border-[#e3350d]'
+                        : inWant
+                        ? 'border-2 border-[#3b82f6]'
+                        : 'border-2 border-white'
+                      : both
+                      ? 'border border-transparent'
+                      : inSell
+                      ? 'border border-[#e3350d]'
+                      : inWant
+                      ? 'border border-[#3b82f6]'
+                      : 'border border-[#2a2a2a] hover:border-[#e3350d]';
+
+                    const gradientStyle = both
+                      ? { background: 'linear-gradient(#1a1a1a, #1a1a1a) padding-box, linear-gradient(to right, #e3350d, #3b82f6) border-box' }
+                      : {};
+
+                    return (
+                      <div
+                        key={card.id}
+                        style={gradientStyle}
+                        onClick={() => handleSelectCard(card)}
+                        className={`group flex flex-col items-center gap-1 p-2 rounded-lg bg-[#1a1a1a] transition-colors cursor-pointer ${borderClass}`}
+                      >
+                        <div className="relative w-full">
+                          <CardImage src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="rounded" language="BR" />
+                          {inQueue && (
+                            <>
+                              <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center z-10">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      const entries = queue.filter(q => q.card.id === card.id);
+                                      if (entries.length === 1) {
+                                        handleQueueRemove(entries[0].uid);
+                                      } else {
+                                        handleQueueRemove(entries[entries.length - 1].uid);
+                                      }
+                                    }}
+                                    className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white font-bold text-lg flex items-center justify-center cursor-pointer"
+                                  >−</button>
+                                  <span className="text-white font-bold text-base w-4 text-center">
+                                    {queue.filter(q => q.card.id === card.id).length}
+                                  </span>
+                                  <button
+                                    onClick={e => { e.stopPropagation(); handleSelectCard(card); }}
+                                    className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white font-bold text-lg flex items-center justify-center cursor-pointer"
+                                  >+</button>
+                                </div>
+                              </div>
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setQueue(prev => prev.filter(q => q.card.id !== card.id));
+                                }}
+                                className="absolute top-1 left-1 w-6 h-6 rounded-full bg-black/60 hover:bg-red-600 text-white text-xs flex items-center justify-center cursor-pointer z-20"
+                              >✕</button>
+                            </>
+                          )}
+                          <button
+                            onClick={e => { e.stopPropagation(); openPreview(card); }}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-black/90 flex items-center justify-center cursor-pointer z-10"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="flex flex-col items-center text-xs text-center leading-tight text-[#888] group-hover:text-[#f0f0f0] transition-colors">
+                          <span>{card.name}</span>
+                          <span>{(sets.find(s => s.id === card.set.id)?.ptcgo_code ?? card.set.id).toUpperCase()} #{card.localId}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-center text-xs text-center leading-tight text-[#888] group-hover:text-[#f0f0f0] transition-colors">
-                        {inSell ? '● Vendo' : inWant ? '● Procuro' : (
-                          <>
-                            <span>{card.name}</span>
-                            <span>{(sets.find(s => s.id === card.set.id)?.ptcgo_code ?? card.set.id).toUpperCase()} #{card.localId}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
+                    );
+                  })();
                 })}
               </div>
 
@@ -523,16 +577,24 @@ const Search = () => {
 
       {queue.length > 0 && (
         <div className="fixed bottom-6 left-0 right-0 flex justify-center px-6 z-30">
-          <button
-            onClick={() => setQueueDrawerOpen(true)}
-            className="bg-[#e3350d] hover:bg-[#c42d0b] text-white font-semibold rounded-xl px-8 py-4 shadow-lg transition-colors flex items-center gap-3 cursor-pointer"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-            </svg>
-            Confirmar seleção ({queue.length} {queue.length === 1 ? 'carta' : 'cartas'})
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setQueue([])}
+              className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] font-semibold rounded-xl px-5 py-4 shadow-lg transition-colors cursor-pointer"
+            >
+              Limpar
+            </button>
+            <button
+              onClick={() => setQueueDrawerOpen(true)}
+              className="bg-[#e3350d] hover:bg-[#c42d0b] text-white font-semibold rounded-xl px-8 py-4 shadow-lg transition-colors flex items-center gap-3 cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+              </svg>
+              Confirmar seleção ({queue.length} {queue.length === 1 ? 'carta' : 'cartas'})
+            </button>
+          </div>
         </div>
       )}
 
