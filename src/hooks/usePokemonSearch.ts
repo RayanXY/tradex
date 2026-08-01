@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase"
 export interface PokemonCard {
   id: string,
   name: string,
+  name_pt: string | null,
   set: {
     id: string,
     name: string,
@@ -13,7 +14,8 @@ export interface PokemonCard {
   image: string
 }
 
-const BASE_URL = "https://api.tcgdex.net/v2/en";
+const BASE_EN = "https://api.tcgdex.net/v2/en";
+const BASE_PT = "https://api.tcgdex.net/v2/pt";
 
 let validSetIds: Set<string> | null = null;
 
@@ -68,8 +70,8 @@ const usePokemonSearch = () => {
         const withoutZeros = `${setId}-${parseInt(localId)}`;
 
         const [res1, res2] = await Promise.all([
-          fetch(`${BASE_URL}/cards/${withZeros}`),
-          fetch(`${BASE_URL}/cards/${withoutZeros}`),
+          fetch(`${BASE_EN}/cards/${withZeros}`),
+          fetch(`${BASE_EN}/cards/${withoutZeros}`),
         ]);
 
         const fetched = await Promise.all([
@@ -81,9 +83,20 @@ const usePokemonSearch = () => {
         for (const card of fetched) {
           if (card && card.id && !seen.has(card.id)) {
             seen.add(card.id);
+            // Tenta buscar nome PT para carta específica
+            let name_pt: string | null = null;
+            try {
+              const ptRes = await fetch(`${BASE_PT}/cards/${card.id}`);
+              if (ptRes.ok) {
+                const ptData = await ptRes.json();
+                name_pt = ptData.name ?? null;
+              }
+            } catch { /* fallback silencioso */ }
+
             cards.push({
               id: card.id,
               name: card.name,
+              name_pt,
               localId: card.localId,
               image: card.image ?? '',
               set: {
@@ -97,39 +110,76 @@ const usePokemonSearch = () => {
 
         cards = cards.filter(c => c.image);
       } else {
-        let allCards: PokemonCard[] = [];
-        let currentPage = 1;
-        let keepFetching = true;
+        const fetchAllPages = async (base: string) => {
+          let allCards: any[] = [];
+          let currentPage = 1;
+          let keepFetching = true;
+          while (keepFetching) {
+            const res = await fetch(
+              `${base}/cards?name=${encodeURIComponent(trimmed)}&pagination:itemsPerPage=50&pagination:page=${currentPage}`
+            );
+            const data = await res.json();
+            const raw = Array.isArray(data) ? data : [];
+            allCards = [...allCards, ...raw];
+            keepFetching = raw.length === 50;
+            currentPage++;
+          }
+          return allCards;
+        };
 
-        while (keepFetching) {
-          const res = await fetch(
-            `${BASE_URL}/cards?name=${encodeURIComponent(trimmed)}&pagination:itemsPerPage=50&pagination:page=${currentPage}`
-          );
-          const data = await res.json();
-          const raw = Array.isArray(data) ? data : [];
-          const mapped = raw
-            .filter((card: any) => card.image)
-            .map((card: any) => ({
-              id: card.id,
-              name: card.name,
-              localId: card.localId,
-              image: card.image ?? '',
-              set: {
-                id: card.set?.id ?? card.id.split('-')[0],
-                name: card.set?.name ?? '',
-                ptcgo_code: null,
-              },
-            }));
+        const [ptRaw, enRaw] = await Promise.all([
+          fetchAllPages(BASE_PT),
+          fetchAllPages(BASE_EN),
+        ]);
 
-          allCards = [...allCards, ...mapped];
-          keepFetching = raw.length === 50;
-          currentPage++;
+        const ptMap = new Map<string, any>();
+        for (const c of ptRaw) {
+          if (c.id) ptMap.set(c.id, c);
         }
 
-        cards = allCards;
+        const seen = new Set<string>();
+        const merged: PokemonCard[] = [];
+
+        for (const c of enRaw) {
+          if (!c.image || seen.has(c.id)) continue;
+          seen.add(c.id);
+          const pt = ptMap.get(c.id);
+          merged.push({
+            id: c.id,
+            name: c.name,
+            name_pt: pt?.name ?? null,
+            localId: c.localId,
+            image: c.image ?? '',
+            set: {
+              id: c.set?.id ?? c.id.split('-')[0],
+              name: c.set?.name ?? '',
+              ptcgo_code: null,
+            },
+          });
+        }
+
+        // Inclui cartas PT que não existem no EN (ex: nomes exclusivamente PT)
+        for (const c of ptRaw) {
+          if (!c.image || seen.has(c.id)) continue;
+          seen.add(c.id);
+          merged.push({
+            id: c.id,
+            name: c.name,
+            name_pt: c.name,
+            localId: c.localId,
+            image: c.image ?? '',
+            set: {
+              id: c.set?.id ?? c.id.split('-')[0],
+              name: c.set?.name ?? '',
+              ptcgo_code: null,
+            },
+          });
+        }
+
+        cards = merged;
       }
 
-      cards = cards.filter(c => validSetIds?.has(c.set.id) ?? true);
+      cards = cards.filter(c => (validSetIds?.has(c.set.id) ?? true) && c.image);
 
       if (cards.length === 0) {
         setError('Nenhuma carta encontrada.');
@@ -148,10 +198,10 @@ const usePokemonSearch = () => {
   };
 
   return { results, loading, error, search, clear };
-};
+}
 
 export const invalidateSetCache = () => {
   validSetIds = null;
-};
+}
 
 export default usePokemonSearch

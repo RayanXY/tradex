@@ -13,7 +13,7 @@ const useSets = () => {
 
     supabase
       .from('sets')
-      .select('id, name, serie, release_date, ptcgo_code, logo_url, total, official_count')
+      .select('id, name, name_pt, serie, release_date, ptcgo_code, logo_url, total, official_count')
       .order('release_date', { ascending: false, nullsFirst: false })
       .then(({ data }) => {
         cachedSets = data ?? [];

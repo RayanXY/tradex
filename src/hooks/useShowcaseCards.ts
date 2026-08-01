@@ -53,10 +53,10 @@ export const useShowcaseCards = (
 
       const { data: setsData } = await supabase
         .from('sets')
-        .select('id, name, logo_url, release_date')
+        .select('id, name, name_pt, logo_url, release_date')
         .in('id', setIds);
 
-      const setsMap = new Map<string, Pick<SetItem, 'name' | 'logo_url'>>(
+      const setsMap = new Map<string, Pick<SetItem, 'name' | 'name_pt' | 'logo_url'>>(
         (setsData ?? []).map(s => [s.id, s])
       );
 
@@ -67,7 +67,7 @@ export const useShowcaseCards = (
           const setInfo = setsMap.get(setId);
           groupMap.set(setId, {
             setId,
-            setName: setInfo?.name ?? card.set_name,
+            setName: setInfo?.name_pt ?? setInfo?.name ?? card.set_name,
             logoUrl: setInfo?.logo_url ?? null,
             cards: [],
           });

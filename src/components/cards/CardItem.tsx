@@ -68,7 +68,7 @@ const CardItem = ({
       </div>
 
       <div className="relative z-10">
-        <p className="text-sm font-semibold text-[#f0f0f0] leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{card.name}</p>
+        <p className="text-sm font-semibold text-[#f0f0f0] leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{card.name_pt ?? card.name}</p>
         <p className="text-xs text-[#888]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{card.set_name}</p>
       </div>
 

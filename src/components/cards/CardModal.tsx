@@ -3,8 +3,9 @@ import { useEffect, useState, useRef } from 'react'
 import type { TradexCard } from '../../types'
 import useCardDetails from '../../hooks/useCardDetails'
 import type { PokemonCard } from '../../hooks/usePokemonSearch'
-import { conditionColor, languageCountry, getLocalizedImageUrl } from '../../constants/cards'
 import VariantOverlay from './VariantOverlay'
+import { rarityTier, tierLabel } from '../../constants/rarities';
+import { conditionColor, languageCountry, getLocalizedImageUrl } from '../../constants/cards'
 
 type CardModalCard =
   | TradexCard
@@ -16,6 +17,21 @@ interface CardModalProps {
   onIndexChange: (index: number) => void,
   onClose: () => void
 }
+
+const stageLabel: Record<string, string> = {
+  'Basic': 'Básico',
+  'Stage 1': 'Estágio 1',
+  'Stage 2': 'Estágio 2',
+  'LEGEND': 'Lenda',
+  'Level-Up': 'Nível Acima',
+  'Restored': 'Restaurado',
+};
+
+const typeLabel: Record<string, string> = {
+  Grass: 'Planta', Fire: 'Fogo', Water: 'Água', Lightning: 'Elétrico',
+  Psychic: 'Psíquico', Fighting: 'Lutador', Darkness: 'Sombrio',
+  Metal: 'Metal', Dragon: 'Dragão', Fairy: 'Fada', Colorless: 'Incolor',
+};
 
 const isTradexCard = (card: CardModalCard): card is TradexCard =>
   'tcg_card_id' in card;
@@ -141,7 +157,10 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
         {/* 1. Nome */}
         <div className="relative z-10 px-8 text-center">
           <p className="font-bold text-[#f0f0f0] text-xl leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
-            {card.name}
+            {isTradex
+              ? ((card as TradexCard).name_pt ?? card.name)
+              : ((card as any).name_pt ?? card.name)
+            }
             {localId && <span className="text-[#555] font-normal text-base ml-2">#{localId}</span>}
           </p>
           <p className="text-sm text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{setName}</p>
@@ -208,19 +227,23 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
                 <>
                   {/* Meta */}
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    {details.rarity && (
-                      <span className="bg-[#2a2a2a] text-[#f0f0f0] px-2 py-1 rounded">{details.rarity}</span>
-                    )}
+                    {details.rarity && (() => {
+                      const tier = rarityTier[details.rarity];
+                      const label = tier ? tierLabel[tier] : details.rarity;
+                      return (
+                        <span className="bg-[#2a2a2a] text-[#f0f0f0] px-2 py-1 rounded">{label}</span>
+                      );
+                    })()}
                     {details.hp && (
                       <span className="bg-[#2a2a2a] text-[#f0f0f0] px-2 py-1 rounded">{details.hp} HP</span>
                     )}
                     {details.types?.map(t => (
                       <span key={t} style={{ backgroundColor: energyColor[t] ?? '#2a2a2a' }} className="text-white px-2 py-1 rounded">
-                        {t}
+                        {typeLabel[t] ?? t}
                       </span>
                     ))}
                     {details.stage && (
-                      <span className="bg-[#2a2a2a] text-[#888] px-2 py-1 rounded">{details.stage}</span>
+                      <span className="bg-[#2a2a2a] text-[#888] px-2 py-1 rounded">{stageLabel[details.stage] ?? details.stage}</span>
                     )}
                   </div>
 

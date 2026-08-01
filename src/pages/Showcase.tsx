@@ -72,7 +72,7 @@ const Showcase = () => {
 
     const selectedCards = cards.filter(c => selected.has(c.id));
     const list = selectedCards
-      .map(c => `• ${c.name} (${c.set_name})`)
+      .map(c => `• ${c.name_pt ?? c.name} (${c.set_name})`)
       .join('\n');
 
     const message = `Olá ${seller.name}! Tenho interesse nas seguintes cartas:\n\n${list}`;
@@ -203,9 +203,6 @@ const Showcase = () => {
                         <div className="flex items-center gap-3">
                           <SetLogo logoUrl={group.logoUrl} name={group.setName} />
                           <span className="text-sm font-semibold text-[#f0f0f0]">{group.setName}</span>
-                          {group.logoUrl && (
-                            <span className="text-sm font-semibold text-[#f0f0f0]">{group.setName}</span>
-                          )}
                           <span className="text-xs text-[#555]">
                             {group.cards.length} {group.cards.length === 1 ? 'carta' : 'cartas'}
                           </span>

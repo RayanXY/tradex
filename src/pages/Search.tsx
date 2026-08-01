@@ -59,7 +59,7 @@ const SidebarContent = ({ seriesOrder, openSeries, selectedSet, toggleSerie, set
                     : 'text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a]'
                 }`}
               >
-                {set.name}
+                {set.name_pt ?? set.name}
               </button>
             ))}
           </div>
@@ -149,20 +149,32 @@ const Search = () => {
     setSortBy(prev => prev === 'recent' ? 'number' : prev);
     setSetFilter('');
 
-    const res = await fetch(`https://api.tcgdex.net/v2/en/cards?set.id=${setId}&pagination:itemsPerPage=300`);
-    const data = await res.json();
-    const cards = Array.isArray(data)
-      ? data.filter((c: any) => c.image && c.id.startsWith(setId + '-'))
-      : [];
     const setInfo = sets.find(s => s.id === setId);
+
+    const [ptRes, enRes] = await Promise.all([
+      fetch(`https://api.tcgdex.net/v2/pt/cards?set.id=${setId}&pagination:itemsPerPage=300`),
+      fetch(`https://api.tcgdex.net/v2/en/cards?set.id=${setId}&pagination:itemsPerPage=300`),
+    ]);
+
+    const [ptData, enData] = await Promise.all([
+      ptRes.ok ? ptRes.json() : [],
+      enRes.ok ? enRes.json() : [],
+    ]);
+
+    const ptCards = Array.isArray(ptData) ? ptData.filter((c: any) => c.id.startsWith(setId + '-')) : [];
+    const enCards = Array.isArray(enData) ? enData.filter((c: any) => c.image && c.id.startsWith(setId + '-')) : [];
+
+    const ptMap = new Map<string, any>();
+    for (const c of ptCards) ptMap.set(c.id, c);
 
     if (setInfo) {
       setOpenSeries(prev => new Set(prev).add(setInfo.serie));
     }
 
-    setSetResults(cards.map((c: any) => ({
+    setSetResults(enCards.map((c: any) => ({
       id: c.id,
       name: c.name,
+      name_pt: ptMap.get(c.id)?.name ?? null,
       localId: c.localId,
       image: c.image ?? '',
       set: {
@@ -172,7 +184,7 @@ const Search = () => {
       },
     })));
     setLoadingSet(false);
-  };
+  }
 
   const isSetSearch = selectedSet !== null && results.length === 0;
 
@@ -250,6 +262,7 @@ const Search = () => {
       user_id: user.id,
       tcg_card_id: q.card.id,
       name: q.card.name,
+      name_pt: q.card.name_pt ?? null,
       set_name: q.card.set.name,
       image_url: q.card.image ? q.card.image + '/low.webp' : '',
       price: q.price ? parseFloat(q.price) : null,
@@ -336,7 +349,7 @@ const Search = () => {
                   {/* Cabeçalho */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-sm font-semibold text-[#f0f0f0]">{card.name}</span>
+                      <span className="text-sm font-semibold text-[#f0f0f0]">{card.name_pt ?? card.name}</span>
                       <span className="text-xs text-[#555] mx-1">·</span>
                       <span className="text-xs text-[#888]">{(card.set.ptcgo_code ?? card.set.id).toUpperCase()} #{card.localId}</span>
                     </div>
@@ -442,9 +455,9 @@ const Search = () => {
           {isSetSearch && selectedSet && (
             <>
               <div className="flex items-center gap-4 mb-4 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
-                <SetLogo logoUrl={selectedSet.logo_url ?? null} name={selectedSet.name} />
+                <SetLogo logoUrl={selectedSet.logo_url ?? null} name={selectedSet.name_pt ?? selectedSet.name} />
                 <div>
-                  <p className="font-semibold text-[#f0f0f0]">{selectedSet.name}</p>
+                  <p className="font-semibold text-[#f0f0f0]">{selectedSet.name_pt ?? selectedSet.name}</p>
                   <p className="text-xs text-[#888]">
                     {selectedSet.release_date ?? 'Data desconhecida'} · {selectedSet.official_count ?? '?'} cartas base · {selectedSet.total ?? setResults.length} total
                   </p>
@@ -452,7 +465,7 @@ const Search = () => {
               </div>
               <input
                 type="text"
-                placeholder={`Buscar em ${selectedSet.name}...`}
+                placeholder={`Buscar em ${selectedSet.name_pt ?? selectedSet.name}...`}
                 value={setFilter}
                 onChange={e => setSetFilter(e.target.value)}
                 className="w-full mb-6 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
@@ -555,7 +568,7 @@ const Search = () => {
                           </button>
                         </div>
                         <div className="flex flex-col items-center text-xs text-center leading-tight text-[#888] group-hover:text-[#f0f0f0] transition-colors">
-                          <span>{card.name}</span>
+                          <span>{card.name_pt ?? card.name}</span>
                           <span>{(sets.find(s => s.id === card.set.id)?.ptcgo_code ?? card.set.id).toUpperCase()} #{card.localId}</span>
                         </div>
                       </div>

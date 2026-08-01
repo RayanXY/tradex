@@ -2,6 +2,7 @@ export interface TradexCard {
   id: string,
   tcg_card_id: string,
   name: string,
+  name_pt: string,
   set_name: string,
   image_url: string,
   price: number | null,
@@ -25,6 +26,7 @@ export interface Seller {
 export interface SetItem {
   id: string,
   name: string,
+  name_pt: string | null,
   serie: string,
   release_date: string | null,
   ptcgo_code: string | null,

@@ -240,7 +240,7 @@ const Dashboard = () => {
     <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 flex flex-col gap-3">
       <div className="flex items-center gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[#f0f0f0] truncate">{card.name}</p>
+          <p className="text-sm font-semibold text-[#f0f0f0] truncate">{card.name_pt ?? card.name}</p>
           <p className="text-xs text-[#888]">
             #{card.tcg_card_id.split('-').pop()} · {card.set_name}
           </p>

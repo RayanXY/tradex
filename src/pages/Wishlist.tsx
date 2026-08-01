@@ -72,7 +72,7 @@ const Wishlist = () => {
 
     const selectedCards = cards.filter(c => selected.has(c.id));
     const list = selectedCards
-      .map(c => `• ${c.name} (${c.set_name})`)
+      .map(c => `• ${c.name_pt ?? c.name} (${c.set_name})`)
       .join('\n');
 
     const message = `Olá ${seller.name}! Tenho as seguintes cartas que você procura:\n\n${list}`;

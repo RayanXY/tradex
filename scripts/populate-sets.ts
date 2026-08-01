@@ -24,14 +24,25 @@ const inferSerie = (id: string): string => {
 }
 
 const populate = async () => {
-  console.log('Fetching sets from TCGdex...')
+  console.log('Fetching sets from TCGdex (EN + PT)...')
 
-  const res = await fetch('https://api.tcgdex.net/v2/en/sets?pagination:itemsPerPage=500')
-  const data = await res.json()
+  const [enRes, ptRes] = await Promise.all([
+    fetch('https://api.tcgdex.net/v2/en/sets?pagination:itemsPerPage=500'),
+    fetch('https://api.tcgdex.net/v2/pt/sets?pagination:itemsPerPage=500'),
+  ])
 
-  const sets = data.map((s: any) => ({
+  const [enData, ptData] = await Promise.all([
+    enRes.json(),
+    ptRes.json(),
+  ])
+
+  const ptMap = new Map<string, any>()
+  for (const s of ptData) ptMap.set(s.id, s)
+
+  const sets = enData.map((s: any) => ({
     id: s.id,
     name: s.name,
+    name_pt: ptMap.get(s.id)?.name ?? null,
     serie: inferSerie(s.id),
     total: s.cardCount?.official ?? s.cardCount?.total ?? 0,
     release_date: null,
