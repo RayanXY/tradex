@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Pokeball from '../ui/Pokeball';
 import { useAuth } from '../../contexts/AuthContext';
@@ -27,6 +27,26 @@ const Navbar = () => {
     setSearchQuery('');
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/") return;
+
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      e.preventDefault();
+      if (window.innerWidth < 768) {
+        setMobileSearchOpen(true);
+        setMenuOpen(false);
+      } else {
+        document.getElementById('navbar-search-desktop')?.focus();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, []);
+
   return (
     <header className="sticky top-0 z-50 bg-[#0d0d0d] border-b border-[#2a2a2a] px-6 py-4">
       <div className="flex items-center gap-4">
@@ -42,8 +62,9 @@ const Navbar = () => {
           <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-auto">
             <div className="flex w-full">
               <input
+                id="navbar-search-desktop"
                 type="text"
-                placeholder="Buscar carta..."
+                placeholder="Buscar carta... [ / ]"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] border-r-0 rounded-l-lg px-4 py-2 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
@@ -114,6 +135,7 @@ const Navbar = () => {
       {user && mobileSearchOpen && (
         <form onSubmit={handleSearch} className="md:hidden mt-3 flex gap-2">
           <input
+            id="navbar-search-mobile"
             type="text"
             placeholder="Buscar carta..."
             value={searchQuery}
