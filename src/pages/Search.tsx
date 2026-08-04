@@ -589,26 +589,27 @@ const Search = () => {
       </div>
 
       {queue.length > 0 && (
-        <div className="fixed bottom-6 left-0 right-0 flex justify-center px-6 z-30">
-          <div className="flex items-center gap-3">
+        <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 z-30">
+          <div className="flex items-center gap-2 w-full max-w-sm">
             <button
               onClick={() => setQueue([])}
-              className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] font-semibold rounded-xl px-5 py-4 shadow-lg transition-colors cursor-pointer"
+              className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] font-semibold rounded-xl px-4 py-3 shadow-lg transition-colors cursor-pointer shrink-0 text-sm"
             >
               Limpar
             </button>
             <button
               onClick={() => setQueueDrawerOpen(true)}
-              className="bg-[#e3350d] hover:bg-[#c42d0b] text-white font-semibold rounded-xl px-8 py-4 shadow-lg transition-colors flex items-center gap-3 cursor-pointer"
+              className="flex-1 bg-[#e3350d] hover:bg-[#c42d0b] text-white font-semibold rounded-xl px-4 py-3 shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer text-sm"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="hidden sm:block shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 11l3 3L22 4"/>
                 <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
               </svg>
-              Confirmar seleção ({queue.length} {queue.length === 1 ? 'carta' : 'cartas'})
+              <span className="sm:hidden">Adicionar ({queue.length})</span>
+              <span className="hidden sm:inline">Adicionar ({queue.length} {queue.length === 1 ? 'carta' : 'cartas'})</span>
             </button>
           </div>
-        </div>
+</div>
       )}
 
       {previewOpen && (
