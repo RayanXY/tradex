@@ -84,26 +84,30 @@ const Navbar = () => {
         </div>
 
         {/* Mobile: lupa + hamburguer */}
-        {user && (
-          <div className="md:hidden flex items-center gap-3 ml-auto">
-            <button
-              onClick={() => { setMobileSearchOpen(prev => !prev); setMenuOpen(false); }}
-              className="text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer p-1"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
-            </button>
-            <button
-              onClick={() => { setMenuOpen(prev => !prev); setMobileSearchOpen(false); }}
-              className="flex flex-col gap-1.5 cursor-pointer p-1"
-            >
-              <span className={`block w-6 h-0.5 bg-[#f0f0f0] transition-transform ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
-              <span className={`block w-6 h-0.5 bg-[#f0f0f0] transition-opacity ${menuOpen ? 'opacity-0' : ''}`} />
-              <span className={`block w-6 h-0.5 bg-[#f0f0f0] transition-transform ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
-            </button>
-          </div>
-        )}
+        <div className="md:hidden flex items-center gap-3 ml-auto">
+          {user ? (
+            <>
+              <button
+                onClick={() => { setMobileSearchOpen(prev => !prev); setMenuOpen(false); }}
+                className="text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer p-1"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+              </button>
+              <button
+                onClick={() => { setMenuOpen(prev => !prev); setMobileSearchOpen(false); }}
+                className="flex flex-col gap-1.5 cursor-pointer p-1"
+              >
+                <span className={`block w-6 h-0.5 bg-[#f0f0f0] transition-transform ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
+                <span className={`block w-6 h-0.5 bg-[#f0f0f0] transition-opacity ${menuOpen ? 'opacity-0' : ''}`} />
+                <span className={`block w-6 h-0.5 bg-[#f0f0f0] transition-transform ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="text-sm text-[#f4d03f] hover:underline">Entrar</Link>
+          )}
+        </div>
       </div>
 
       {/* Mobile: barra de busca expansível */}
