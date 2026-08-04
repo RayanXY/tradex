@@ -258,7 +258,7 @@ const Admin = () => {
               className="shrink-0 flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#e3350d] text-sm text-[#f0f0f0] px-4 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <span className={syncing ? 'animate-spin' : ''}>↻</span>
-              {syncing ? 'Sincronizando...' : 'Sincronizar sets'}
+              <span className="hidden sm:inline">{syncing ? 'Sincronizando...' : 'Sincronizar sets'}</span>
             </button>
           )}
         </div>
@@ -289,115 +289,170 @@ const Admin = () => {
               </thead>
               <tbody>
                 {sortedSets.map(set => (
-                  <tr key={set.id} className="border-b border-[#2a2a2a] last:border-0 hover:bg-[#222] transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <SetLogo logoUrl={set.logo_url} name={set.name} />
-                        <div>
-                          <p className="text-[#f0f0f0] font-medium">{set.name}</p>
-                          <p className="text-xs text-[#555] font-mono">{set.id}</p>
+                  <>
+                    <tr key={set.id} className="border-b border-[#2a2a2a] last:border-0 hover:bg-[#222] transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <SetLogo logoUrl={set.logo_url} name={set.name} />
+                          <div>
+                            <p className="text-[#f0f0f0] font-medium">{set.name}</p>
+                            <p className="text-xs text-[#555] font-mono">{set.id}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      {editingId === set.id ? (
-                        <input
-                          value={editValues.serie ?? ''}
-                          onChange={e => setEditValues(prev => ({ ...prev, serie: e.target.value }))}
-                          onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
-                          className="w-36 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
-                        />
-                      ) : (
-                        <span className="text-[#888] text-xs">{set.serie}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      {editingId === set.id ? (
-                        <input
-                          value={editValues.ptcgo_code ?? ''}
-                          onChange={e => setEditValues(prev => ({ ...prev, ptcgo_code: e.target.value }))}
-                          onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
-                          className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
-                        />
-                      ) : (
-                        <span className="text-[#888] text-xs">{set.ptcgo_code ?? '—'}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      {editingId === set.id ? (
-                        <input
-                          value={(() => {
-                            const d = editValues.release_date ?? '';
-                            const parts = d.split('/');
-                            if (parts.length === 3 && parts[0].length === 4) {
-                              return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                            }
-                            return d;
-                          })()}
-                          onChange={e => {
-                            const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
-                            let masked = digits;
-                            if (digits.length > 4) masked = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-                            else if (digits.length > 2) masked = `${digits.slice(0, 2)}/${digits.slice(2)}`;
-                            const parts = masked.split('/');
-                            const stored = parts.length === 3 && parts[2].length === 4
-                              ? `${parts[2]}/${parts[1]}/${parts[0]}`
-                              : masked;
-                            setEditValues(prev => ({ ...prev, release_date: stored }));
-                          }}
-                          onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
-                          placeholder="DD/MM/YYYY"
-                          autoFocus
-                          onFocus={e => e.target.select()}
-                          className="w-28 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
-                        />
-                      ) : (
-                        <span className="text-[#888] text-xs">
-                          {set.release_date ? set.release_date.split('/').reverse().join('/') : '—'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
                         {editingId === set.id ? (
-                          <>
-                            <button
-                              onClick={() => handleSaveSet(set.id)}
-                              disabled={saving}
-                              title="Salvar"
-                              className="text-[#22c55e] hover:text-white transition-colors cursor-pointer"
-                            >
-                              ✓
-                            </button>
-                            <button
-                              onClick={() => setEditingId(null)}
-                              title="Cancelar"
-                              className="text-[#555] hover:text-[#f0f0f0] transition-colors cursor-pointer"
-                            >
-                              ✕
-                            </button>
-                          </>
+                          <input
+                            value={editValues.serie ?? ''}
+                            onChange={e => setEditValues(prev => ({ ...prev, serie: e.target.value }))}
+                            onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
+                            className="w-36 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
+                          />
                         ) : (
-                          <>
-                            <button
-                              onClick={() => handleEditSet(set)}
-                              title="Editar"
-                              className="text-[#555] hover:text-[#f0f0f0] transition-colors cursor-pointer"
-                            >
-                              ✏️
-                            </button>
-                            <button
-                              onClick={() => handleDeleteSet(set.id)}
-                              title="Deletar"
-                              className="text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
-                            >
-                              🗑️
-                            </button>
-                          </>
+                          <span className="text-[#888] text-xs">{set.serie}</span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        {editingId === set.id ? (
+                          <input
+                            value={editValues.ptcgo_code ?? ''}
+                            onChange={e => setEditValues(prev => ({ ...prev, ptcgo_code: e.target.value }))}
+                            onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
+                            className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
+                          />
+                        ) : (
+                          <span className="text-[#888] text-xs">{set.ptcgo_code ?? '—'}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        {editingId === set.id ? (
+                          <input
+                            value={(() => {
+                              const d = editValues.release_date ?? '';
+                              const parts = d.split('/');
+                              if (parts.length === 3 && parts[0].length === 4) {
+                                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                              }
+                              return d;
+                            })()}
+                            onChange={e => {
+                              const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                              let masked = digits;
+                              if (digits.length > 4) masked = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+                              else if (digits.length > 2) masked = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                              const parts = masked.split('/');
+                              const stored = parts.length === 3 && parts[2].length === 4
+                                ? `${parts[2]}/${parts[1]}/${parts[0]}`
+                                : masked;
+                              setEditValues(prev => ({ ...prev, release_date: stored }));
+                            }}
+                            onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
+                            placeholder="DD/MM/YYYY"
+                            autoFocus
+                            onFocus={e => e.target.select()}
+                            className="w-28 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
+                          />
+                        ) : (
+                          <span className="text-[#888] text-xs">
+                            {set.release_date ? set.release_date.split('/').reverse().join('/') : '—'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          {editingId === set.id ? (
+                            <>
+                              <button
+                                onClick={() => handleSaveSet(set.id)}
+                                disabled={saving}
+                                title="Salvar"
+                                className="text-[#22c55e] hover:text-white transition-colors cursor-pointer"
+                              >
+                                ✓
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                title="Cancelar"
+                                className="text-[#555] hover:text-[#f0f0f0] transition-colors cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleEditSet(set)}
+                                title="Editar"
+                                className="text-[#555] hover:text-[#f0f0f0] transition-colors cursor-pointer"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSet(set.id)}
+                                title="Deletar"
+                                className="text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
+                              >
+                                🗑️
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {editingId === set.id && (
+                      <tr key={`${set.id}-edit`} className="md:hidden border-b border-[#2a2a2a] bg-[#111]">
+                        <td colSpan={2} className="px-4 py-3">
+                          <div className="flex flex-col gap-3">
+                            <div>
+                              <label className="text-xs text-[#555] mb-1 block">Série</label>
+                              <input
+                                value={editValues.serie ?? ''}
+                                onChange={e => setEditValues(prev => ({ ...prev, serie: e.target.value }))}
+                                onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
+                                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-[#555] mb-1 block">PTCGO</label>
+                              <input
+                                value={editValues.ptcgo_code ?? ''}
+                                onChange={e => setEditValues(prev => ({ ...prev, ptcgo_code: e.target.value }))}
+                                onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
+                                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-[#555] mb-1 block">Release</label>
+                              <input
+                                value={(() => {
+                                  const d = editValues.release_date ?? '';
+                                  const parts = d.split('/');
+                                  if (parts.length === 3 && parts[0].length === 4) {
+                                    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                                  }
+                                  return d;
+                                })()}
+                                onChange={e => {
+                                  const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                                  let masked = digits;
+                                  if (digits.length > 4) masked = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+                                  else if (digits.length > 2) masked = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                                  const parts = masked.split('/');
+                                  const stored = parts.length === 3 && parts[2].length === 4
+                                    ? `${parts[2]}/${parts[1]}/${parts[0]}`
+                                    : masked;
+                                  setEditValues(prev => ({ ...prev, release_date: stored }));
+                                }}
+                                onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
+                                placeholder="DD/MM/YYYY"
+                                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
+                              />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
