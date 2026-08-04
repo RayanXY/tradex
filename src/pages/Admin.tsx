@@ -304,6 +304,7 @@ const Admin = () => {
                         <input
                           value={editValues.serie ?? ''}
                           onChange={e => setEditValues(prev => ({ ...prev, serie: e.target.value }))}
+                          onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
                           className="w-36 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
                         />
                       ) : (
@@ -315,6 +316,7 @@ const Admin = () => {
                         <input
                           value={editValues.ptcgo_code ?? ''}
                           onChange={e => setEditValues(prev => ({ ...prev, ptcgo_code: e.target.value }))}
+                          onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
                           className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
                         />
                       ) : (
@@ -324,13 +326,35 @@ const Admin = () => {
                     <td className="px-4 py-3 hidden md:table-cell">
                       {editingId === set.id ? (
                         <input
-                          value={editValues.release_date ?? ''}
-                          onChange={e => setEditValues(prev => ({ ...prev, release_date: e.target.value }))}
-                          placeholder="YYYY/MM/DD"
+                          value={(() => {
+                            const d = editValues.release_date ?? '';
+                            const parts = d.split('/');
+                            if (parts.length === 3 && parts[0].length === 4) {
+                              return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                            }
+                            return d;
+                          })()}
+                          onChange={e => {
+                            const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                            let masked = digits;
+                            if (digits.length > 4) masked = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+                            else if (digits.length > 2) masked = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                            const parts = masked.split('/');
+                            const stored = parts.length === 3 && parts[2].length === 4
+                              ? `${parts[2]}/${parts[1]}/${parts[0]}`
+                              : masked;
+                            setEditValues(prev => ({ ...prev, release_date: stored }));
+                          }}
+                          onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
+                          placeholder="DD/MM/YYYY"
+                          autoFocus
+                          onFocus={e => e.target.select()}
                           className="w-28 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
                         />
                       ) : (
-                        <span className="text-[#888] text-xs">{set.release_date ?? '—'}</span>
+                        <span className="text-[#888] text-xs">
+                          {set.release_date ? set.release_date.split('/').reverse().join('/') : '—'}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
