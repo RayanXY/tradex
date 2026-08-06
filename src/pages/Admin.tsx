@@ -23,6 +23,7 @@ interface SetItem {
   total: number | null,
   official_count: number | null,
   logo_url: string | null,
+  logo_url_pt: string | null,
   symbol_url: string | null,
   order_index: number | null,
   enabled: boolean,
@@ -99,7 +100,15 @@ const Admin = () => {
 
   const handleEditSet = (set: SetItem) => {
     setEditingId(set.id);
-    setEditValues({ serie: set.serie, ptcgo_code: set.ptcgo_code ?? '', release_date: set.release_date ?? '' });
+    setEditValues({
+      serie: set.serie,
+      ptcgo_code: set.ptcgo_code ?? '',
+      release_date: set.release_date ?? '',
+      order_index: set.order_index,
+      logo_url: set.logo_url ?? '',
+      logo_url_pt: set.logo_url_pt ?? '',
+      symbol_url: set.symbol_url ?? '',
+    });
   };
 
   const handleSaveSet = async (id: string) => {
@@ -110,6 +119,10 @@ const Admin = () => {
         serie: editValues.serie,
         ptcgo_code: editValues.ptcgo_code || null,
         release_date: editValues.release_date || null,
+        order_index: editValues.order_index ?? null,
+        logo_url: editValues.logo_url || null,
+        logo_url_pt: editValues.logo_url_pt || null,
+        symbol_url: editValues.symbol_url || null,
       })
       .eq('id', id);
 
@@ -127,6 +140,26 @@ const Admin = () => {
       setSets(prev => prev.filter(s => s.id !== id));
       invalidateSetCache();
     }
+  };
+
+  const handleToggleEnabled = async (set: SetItem) => {
+    const { error } = await supabase
+      .from('sets')
+      .update({ enabled: !set.enabled })
+      .eq('id', set.id);
+
+    if (!error) setSets(prev => prev.map(s => s.id === set.id ? { ...s, enabled: !s.enabled } : s));
+  }
+
+  const handleUploadAsset = async (setId: string, field: 'logo_url' | 'logo_url_pt' | 'symbol_url', file: File) => {
+    const ext = file.name.split('.').pop();
+    const path = `${setId}/${field}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('set-assets')
+      .upload(path, file, { upsert: true });
+    if (uploadError) return;
+    const { data } = supabase.storage.from('set-assets').getPublicUrl(path);
+    setEditValues(prev => ({ ...prev, [field]: data.publicUrl }));
   };
 
   const handleToggleRole = async (user: UserItem) => {
@@ -381,7 +414,14 @@ const Admin = () => {
 
             {/* Lista de séries com sets */}
             {[...series].sort((a, b) => (b.order_index ?? -1) - (a.order_index ?? -1)).map(serie => {
-              const serieSets = sets.filter(s => s.serie_id === serie.id);
+              const serieSets = sets
+                .filter(s => s.serie_id === serie.id)
+                .sort((a, b) => {
+                  if (a.order_index == null && b.order_index == null) return 0;
+                  if (a.order_index == null) return 1;
+                  if (b.order_index == null) return -1;
+                  return b.order_index - a.order_index;
+                });
               const isExpanded = expandedSeries.has(serie.id);
 
               return (
@@ -453,7 +493,7 @@ const Admin = () => {
                     </div>
                   </div>
 
-                  {/* Sets da série */}
+                  {/* SERIES' SETS */}
                   {isExpanded && (
                     <table className="w-full text-sm">
                       <thead>
@@ -474,9 +514,14 @@ const Admin = () => {
                             <tr className="border-b border-[#2a2a2a] last:border-0 hover:bg-[#222] transition-colors">
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-3">
-                                  <SetLogo logoUrl={set.logo_url} name={set.name} />
+                                  <div className="shrink-0">
+                                    <SetLogo logoUrl={set.logo_url} name={set.name} />
+                                  </div>
                                   <div>
-                                    <p className="text-[#f0f0f0] font-medium">{set.name}</p>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-[#f0f0f0] font-medium">{set.name}</p>
+                                      {set.order_index != null && <span className="text-xs text-[#333] font-mono">#{set.order_index}</span>}
+                                    </div>
                                     <p className="text-xs text-[#555] font-mono">{set.id}</p>
                                   </div>
                                 </div>
@@ -526,7 +571,14 @@ const Admin = () => {
                                 )}
                               </td>
                               <td className="px-4 py-3">
-                                <div className="flex items-center justify-end gap-2">
+                                <div className="flex items-center justify-end gap-3">
+                                  <button
+                                    onClick={() => handleToggleEnabled(set)}
+                                    title={set.enabled ? 'Desabilitar' : 'Habilitar'}
+                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${set.enabled ? 'bg-[#22c55e]' : 'bg-[#2a2a2a]'}`}
+                                  >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${set.enabled ? 'translate-x-4' : 'translate-x-0'}`} />
+                                  </button>
                                   {editingId === set.id ? (
                                     <>
                                       <button onClick={() => handleSaveSet(set.id)} disabled={saving} className="text-[#22c55e] hover:text-white transition-colors cursor-pointer">✓</button>
@@ -542,10 +594,24 @@ const Admin = () => {
                               </td>
                             </tr>
                             {editingId === set.id && (
-                              <tr className="md:hidden border-b border-[#2a2a2a] bg-[#111]">
-                                <td colSpan={2} className="px-4 py-3">
-                                  <div className="flex flex-col gap-3">
+                              <tr className="border-b border-[#2a2a2a] bg-[#111]">
+                                <td colSpan={4} className="px-4 py-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+
+                                    {/* ORDER */}
                                     <div>
+                                      <label className="text-xs text-[#555] mb-1 block">Ordem</label>
+                                      <input
+                                        value={editValues.order_index ?? ''}
+                                        onChange={e => setEditValues(prev => ({ ...prev, order_index: e.target.value ? parseInt(e.target.value) : null }))}
+                                        onKeyDown={e => { if (e.key === 'Enter') handleSaveSet(set.id); }}
+                                        type="number"
+                                        className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
+                                      />
+                                    </div>
+
+                                    {/* PTCGO */}
+                                    <div className="sm:hidden">
                                       <label className="text-xs text-[#555] mb-1 block">PTCGO</label>
                                       <input
                                         value={editValues.ptcgo_code ?? ''}
@@ -554,7 +620,9 @@ const Admin = () => {
                                         className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
                                       />
                                     </div>
-                                    <div>
+
+                                    {/* RELEASE */}
+                                    <div className="md:hidden">
                                       <label className="text-xs text-[#555] mb-1 block">Lançamento</label>
                                       <input
                                         value={(() => {
@@ -579,6 +647,49 @@ const Admin = () => {
                                         className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
                                       />
                                     </div>
+
+                                    {/* LOGO */}
+                                    <div>
+                                      <label className="text-xs text-[#555] mb-1 block">Logo</label>
+                                      {editValues.logo_url && (
+                                        <img src={editValues.logo_url} alt="logo EN" className="h-8 mb-2 opacity-80" />
+                                      )}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={e => { if (e.target.files?.[0]) handleUploadAsset(set.id, 'logo_url', e.target.files[0]); }}
+                                        className="w-full text-xs text-[#888] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-[#2a2a2a] file:text-[#f0f0f0] file:cursor-pointer"
+                                      />
+                                    </div>
+
+                                    {/* LOGO BR */}
+                                    <div>
+                                      <label className="text-xs text-[#555] mb-1 block">Logo (BR)</label>
+                                      {editValues.logo_url_pt && (
+                                        <img src={editValues.logo_url_pt} alt="logo PT" className="h-8 mb-2 opacity-80" />
+                                      )}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={e => { if (e.target.files?.[0]) handleUploadAsset(set.id, 'logo_url_pt', e.target.files[0]); }}
+                                        className="w-full text-xs text-[#888] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-[#2a2a2a] file:text-[#f0f0f0] file:cursor-pointer"
+                                      />
+                                    </div>
+
+                                    {/* SYMBOL */}
+                                    <div>
+                                      <label className="text-xs text-[#555] mb-1 block">Símbolo</label>
+                                      {editValues.symbol_url && (
+                                        <img src={editValues.symbol_url} alt="símbolo" className="h-8 mb-2 opacity-80" />
+                                      )}
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={e => { if (e.target.files?.[0]) handleUploadAsset(set.id, 'symbol_url', e.target.files[0]); }}
+                                        className="w-full text-xs text-[#888] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-[#2a2a2a] file:text-[#f0f0f0] file:cursor-pointer"
+                                      />
+                                    </div>
+
                                   </div>
                                 </td>
                               </tr>
