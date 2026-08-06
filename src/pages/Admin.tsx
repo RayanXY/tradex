@@ -517,7 +517,12 @@ const Admin = () => {
                                   <div className="shrink-0">
                                     <SetLogo logoUrl={set.logo_url} name={set.name} />
                                   </div>
-                                  <div>
+                                  {set.symbol_url ? (
+                                    <img src={set.symbol_url} alt="símbolo" className="h-5 w-5 object-contain bg-white rounded p-0.5 shrink-0" />
+                                  ) : (
+                                    <div className="h-5 w-5 shrink-0" />
+                                  )}
+                                  <div className="flex-1">
                                     <div className="flex items-center gap-2">
                                       <p className="text-[#f0f0f0] font-medium">{set.name}</p>
                                       {set.order_index != null && <span className="text-xs text-[#333] font-mono">#{set.order_index}</span>}
