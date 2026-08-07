@@ -26,4 +26,4 @@ dist-ssr
 
 .vercel
 .env*
-_tradex-assets
+.tradex-assets
