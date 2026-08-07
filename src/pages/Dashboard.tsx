@@ -9,12 +9,14 @@ import CardModal from '../components/cards/CardModal'
 import Tabs from '../components/ui/Tabs'
 import type { TradexCard } from '../types'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import useSets from '../hooks/useSets'
 
 const PREVIEW_CARDS = 8;
 const CARDS_PER_PAGE = 12;
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { sets } = useSets();
 
   const [sellPage, setSellPage] = useState(1);
   const [wantPage, setWantPage] = useState(1);
@@ -446,6 +448,7 @@ const Dashboard = () => {
           currentIndex={modalIndex}
           onIndexChange={setModalIndex}
           onClose={() => setModalList(null)}
+          sets={sets}
         />
       )}
 

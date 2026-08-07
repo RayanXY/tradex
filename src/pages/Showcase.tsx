@@ -1,18 +1,21 @@
-import { supabase } from '../lib/supabase';
-import { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import Navbar from '../components/layout/Navbar';
-import CardItem from '../components/cards/CardItem';
-import CardModal from '../components/cards/CardModal';
-import Tabs from '../components/ui/Tabs';
-import { useShowcaseCards } from '../hooks/useShowcaseCards';
-import type { TradexCard, Seller } from '../types';
-import Pagination from '../components/ui/Pagination';
-import SetLogo from '../components/ui/SetLogo';
+import { supabase } from '../lib/supabase'
+import { useState, useEffect } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import Navbar from '../components/layout/Navbar'
+import CardItem from '../components/cards/CardItem'
+import CardModal from '../components/cards/CardModal'
+import Tabs from '../components/ui/Tabs'
+import { useShowcaseCards } from '../hooks/useShowcaseCards'
+import type { TradexCard, Seller } from '../types'
+import Pagination from '../components/ui/Pagination'
+import SetLogo from '../components/ui/SetLogo'
+import useSets from '../hooks/useSets'
 
 type ViewMode = 'grade' | 'sets';
 
 const Showcase = () => {
+  const { sets } = useSets();
+
   const [gradePage, setGradePage] = useState(1);
   const [modalIndex, setModalIndex] = useState(0);
   const [notFound, setNotFound] = useState(false);
@@ -249,6 +252,7 @@ const Showcase = () => {
           currentIndex={modalIndex}
           onIndexChange={setModalIndex}
           onClose={() => setModalOpen(false)}
+          sets={sets}
         />
       )}
     </div>

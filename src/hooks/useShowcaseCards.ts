@@ -53,10 +53,10 @@ export const useShowcaseCards = (
 
       const { data: setsData } = await supabase
         .from('sets')
-        .select('id, name, name_pt, logo_url, release_date')
+        .select('id, name, name_pt, logo_url, logo_url_pt, release_date')
         .in('id', setIds);
 
-      const setsMap = new Map<string, Pick<SetItem, 'name' | 'name_pt' | 'logo_url'>>(
+      const setsMap = new Map<string, Pick<SetItem, 'name' | 'name_pt' | 'logo_url' | 'logo_url_pt'>>(
         (setsData ?? []).map(s => [s.id, s])
       );
 
@@ -68,7 +68,7 @@ export const useShowcaseCards = (
           groupMap.set(setId, {
             setId,
             setName: setInfo?.name_pt ?? setInfo?.name ?? card.set_name,
-            logoUrl: setInfo?.logo_url ?? null,
+            logoUrl: setInfo?.logo_url_pt ?? setInfo?.logo_url ?? null,
             cards: [],
           });
         }
@@ -78,7 +78,7 @@ export const useShowcaseCards = (
       const sortedGroups = [...groupMap.values()].sort((a, b) => {
         const dateA = setsData?.find(s => s.id === a.setId)?.release_date ?? '';
         const dateB = setsData?.find(s => s.id === b.setId)?.release_date ?? '';
-        return dateB.localeCompare(dateA); // mais recente primeiro
+        return dateB.localeCompare(dateA);
       });
       setGroups(sortedGroups);
 
