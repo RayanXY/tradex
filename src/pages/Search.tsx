@@ -33,33 +33,39 @@ interface SidebarContentProps {
   selectedSet: SetItem | null;
   toggleSerie: (serie: string) => void;
   setsBySerie: (serie: string) => SetItem[];
+  getSerieLabel: (serieId: string) => string;
   handleSetClick: (setId: string) => void;
 }
 
-const SidebarContent = ({ seriesOrder, openSeries, selectedSet, toggleSerie, setsBySerie, handleSetClick }: SidebarContentProps) => (
+const SidebarContent = ({ seriesOrder, openSeries, selectedSet, toggleSerie, setsBySerie, getSerieLabel, handleSetClick }: SidebarContentProps) => (
   <div className="flex flex-col gap-1">
-    {seriesOrder.map(serie => (
-      <div key={serie}>
+    {seriesOrder.map(serieId => (
+      <div key={serieId}>
         <button
-          onClick={() => toggleSerie(serie)}
+          onClick={() => toggleSerie(serieId)}
           className="w-full text-left flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[#888] hover:text-[#f0f0f0] hover:bg-[#1a1a1a] transition-colors cursor-pointer"
         >
-          <span>{serie}</span>
-          <span className="text-xs">{openSeries.has(serie) ? '▲' : '▼'}</span>
+          <span>{getSerieLabel(serieId)}</span>
+          <span className="text-xs">{openSeries.has(serieId) ? '▲' : '▼'}</span>
         </button>
-        {openSeries.has(serie) && (
+        {openSeries.has(serieId) && (
           <div className="ml-3 flex flex-col gap-0.5 mb-1">
-            {setsBySerie(serie).map(set => (
+            {setsBySerie(serieId).map(set => (
               <button
                 key={set.id}
                 onClick={() => handleSetClick(set.id)}
-                className={`text-left px-3 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                className={`text-left flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors cursor-pointer w-full ${
                   selectedSet?.id === set.id
                     ? 'text-[#f0f0f0] bg-[#2a2a2a]'
                     : 'text-[#555] hover:text-[#f0f0f0] hover:bg-[#1a1a1a]'
                 }`}
               >
-                {set.name_pt ?? set.name}
+                {set.symbol_url ? (
+                  <img src={set.symbol_url} alt="" className="h-4 w-4 object-contain shrink-0 bg-white rounded-sm p-px" />
+                ) : (
+                  <div className="h-4 w-4 shrink-0 bg-[#2a2a2a] rounded-sm" />
+                )}
+                <span className="truncate">{set.name_pt ?? set.name}</span>
               </button>
             ))}
           </div>
@@ -67,7 +73,7 @@ const SidebarContent = ({ seriesOrder, openSeries, selectedSet, toggleSerie, set
       </div>
     ))}
   </div>
-);
+)
 
 const Search = () => {
   const { user } = useAuth();
@@ -95,7 +101,7 @@ const Search = () => {
     setPreviewOpen(true);
   }
 
-  const { sets, loading: loadingSets, seriesOrder, setsBySerie } = useSets();
+  const { sets, series: _, loading: loadingSets, seriesOrder, setsBySerie, getSerieLabel } = useSets();
 
   useEffect(() => {
     if (!user) return;
@@ -167,8 +173,8 @@ const Search = () => {
     const ptMap = new Map<string, any>();
     for (const c of ptCards) ptMap.set(c.id, c);
 
-    if (setInfo) {
-      setOpenSeries(prev => new Set(prev).add(setInfo.serie));
+    if (setInfo?.serie_id) {
+      setOpenSeries(prev => new Set(prev).add(setInfo.serie_id!));
     }
 
     setSetResults(enCards.map((c: any) => ({
@@ -328,8 +334,9 @@ const Search = () => {
             selectedSet={selectedSet}
             toggleSerie={toggleSerie}
             setsBySerie={setsBySerie}
+            getSerieLabel={getSerieLabel}
             handleSetClick={handleSetClick}
-          />  
+          /> 
         </div>
       </div>
 
@@ -422,6 +429,7 @@ const Search = () => {
             selectedSet={selectedSet}
             toggleSerie={toggleSerie}
             setsBySerie={setsBySerie}
+            getSerieLabel={getSerieLabel}
             handleSetClick={handleSetClick}
           />
         </aside>
@@ -455,7 +463,7 @@ const Search = () => {
           {isSetSearch && selectedSet && (
             <>
               <div className="flex items-center gap-4 mb-4 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
-                <SetLogo logoUrl={selectedSet.logo_url ?? null} name={selectedSet.name_pt ?? selectedSet.name} />
+                <SetLogo logoUrl={selectedSet.logo_url_pt ?? selectedSet.logo_url ?? null} name={selectedSet.name_pt ?? selectedSet.name} />
                 <div>
                   <p className="font-semibold text-[#f0f0f0]">{selectedSet.name_pt ?? selectedSet.name}</p>
                   <p className="text-xs text-[#888]">
@@ -618,6 +626,7 @@ const Search = () => {
           currentIndex={previewIndex}
           onIndexChange={setPreviewIndex}
           onClose={() => setPreviewOpen(false)}
+          sets={sets}
         />
       )}
     </div>

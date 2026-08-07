@@ -1,6 +1,6 @@
 import ReactCountryFlag from 'react-country-flag'
 import { useEffect, useState, useRef } from 'react'
-import type { TradexCard } from '../../types'
+import type { SetItem, TradexCard } from '../../types'
 import useCardDetails from '../../hooks/useCardDetails'
 import type { PokemonCard } from '../../hooks/usePokemonSearch'
 import VariantOverlay from './VariantOverlay'
@@ -15,7 +15,8 @@ interface CardModalProps {
   cards: CardModalCard[],
   currentIndex: number,
   onIndexChange: (index: number) => void,
-  onClose: () => void
+  onClose: () => void,
+  sets?: SetItem[],
 }
 
 const stageLabel: Record<string, string> = {
@@ -42,7 +43,7 @@ const energyColor: Record<string, string> = {
   Psychic: '#a855f7', Fighting: '#c2410c', Darkness: '#1f2937', Metal: '#94a3b8',
 }
 
-const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalProps) => {
+const CardModal = ({ cards, currentIndex, onIndexChange, onClose, sets = [] }: CardModalProps) => {
   const card = cards[currentIndex] ?? null;
   const tcgId = card ? (isTradexCard(card) ? card.tcg_card_id : card.id) : null;
   const { details, loading } = useCardDetails(tcgId);
@@ -103,6 +104,10 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
     else goTo(currentIndex - 1);
   };
 
+  const cardSetId = card ? (isTradexCard(card) ? card.tcg_card_id.split('-').slice(0, -1).join('-') : card.set.id) : null;
+  const setItem = cardSetId ? sets.find(s => s.id === cardSetId) : null;
+  const setLogoUrl = setItem?.logo_url_pt ?? setItem?.logo_url ?? null;
+
   return (
     <div
       className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-10 py-8 overflow-y-auto"
@@ -114,13 +119,13 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Variant Overlay */}
+        {/* VARIANT OVERLAY */}
         {isTradex && card.variant && card.variant !== 'normal' && (
           <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0">
             <VariantOverlay variant={card.variant} types={(card as TradexCard).types} size='modal' />
           </div>
         )}
-        {/* Prev */}
+        {/* PREV */}
         {hasPrev && (
           <button
             onClick={e => { e.stopPropagation(); goTo(currentIndex - 1); }}
@@ -132,7 +137,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
           </button>
         )}
 
-        {/* Next */}
+        {/* NEXT */}
         {hasNext && (
           <button
             onClick={e => { e.stopPropagation(); goTo(currentIndex + 1); }}
@@ -144,7 +149,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
           </button>
         )}
 
-        {/* Fechar */}
+        {/* CLOSE */}
         <button
           onClick={onClose}
           className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#888] hover:text-[#f0f0f0] transition-colors cursor-pointer z-20"
@@ -154,7 +159,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
           </svg>
         </button>
 
-        {/* 1. Nome */}
+        {/* 1. NAME */}
         <div className="relative z-10 px-8 text-center">
           <p className="font-bold text-[#f0f0f0] text-xl leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
             {isTradex
@@ -166,7 +171,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
           <p className="text-sm text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{setName}</p>
         </div>
 
-        {/* 2. Imagem com placeholder */}
+        {/* 2. IMAGE PLACEHOLDER */}
         <div className="flex justify-center">
           <div className="relative w-80">
             {!imgLoaded && (
@@ -186,7 +191,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
           </div>
         </div>
 
-        {/* Contador */}
+        {/* CARD COUNTER */}
         {cards.length > 1 && (
           <div className="relative z-10">
             <p className="text-center text-xs text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
@@ -195,15 +200,17 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
           </div>
         )}
 
-        {/* 3. Logo do set */}
+        {/* 3. SET'S LOGO */}
         <div className="flex justify-center h-8">
-          {details?.set?.logo
+          {setLogoUrl
+            ? <img src={setLogoUrl} alt={setName} className="h-8 object-contain opacity-80" />
+            : details?.set?.logo
             ? <img src={`${details.set.logo}.webp`} alt={details.set.name} className="h-8 object-contain opacity-80" />
             : <div className="h-8 w-32 rounded bg-[#2a2a2a] animate-pulse" />
           }
         </div>
 
-        {/* 4. Accordion de detalhes */}
+        {/* 4. CARD'S DETAILS ACCONDION */}
         <div className="relative z-10 border border-[#2a2a2a] rounded-xl overflow-hidden bg-[#1a1a1a]/90">
           <button
             onClick={() => setAccordionOpen(prev => !prev)}
@@ -225,7 +232,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
                 <p className="text-sm text-[#555]">Detalhes indisponíveis.</p>
               ) : (
                 <>
-                  {/* Meta */}
+                  {/* META */}
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     {details.rarity && (() => {
                       const tier = rarityTier[details.rarity];
@@ -247,7 +254,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
                     )}
                   </div>
 
-                  {/* Ataques */}
+                  {/* ATTACKS */}
                   {details.attacks && details.attacks.length > 0 && (
                     <div className="flex flex-col gap-2">
                       {details.attacks.map((atk, i) => (
@@ -269,7 +276,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
                     </div>
                   )}
 
-                  {/* Habilidades */}
+                  {/* ABILITIES */}
                   {details.abilities && details.abilities.length > 0 && (
                     <div className="flex flex-col gap-2">
                       {details.abilities.map((ab, i) => (
@@ -282,7 +289,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
                     </div>
                   )}
 
-                  {/* Fraquezas / Resistências / Recuo */}
+                  {/* WEAKNESS | RESISTANCE | RETREAT */}
                   <div className="flex flex-wrap gap-4 text-xs text-[#888]">
                     {details.weaknesses && details.weaknesses.length > 0 && (
                       <div className="flex items-center gap-1">
@@ -314,7 +321,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose }: CardModalPro
           )}
         </div>
 
-        {/* 5. Negociação */}
+        {/* 5. NEGOCIABLE */}
         {isTradex && c && (
           <div className="relative z-10 pt-2 border-t border-[#2a2a2a] flex flex-col gap-2 bg-[#1a1a1a]/70 rounded-xl px-2 -mx-1 pb-1">
             <div className="flex items-center gap-3">

@@ -4,6 +4,7 @@ import Tabs from '../components/ui/Tabs'
 import SetLogo from '../components/ui/SetLogo'
 import Navbar from '../components/layout/Navbar'
 import { invalidateSetCache } from '../hooks/usePokemonSearch'
+import { invalidateSetsCache } from '../hooks/useSets'
 
 interface SerieItem {
   id: string,
@@ -149,9 +150,11 @@ const Admin = () => {
       .from('sets')
       .update({ enabled: !set.enabled })
       .eq('id', set.id);
-
-    if (!error) setSets(prev => prev.map(s => s.id === set.id ? { ...s, enabled: !s.enabled } : s));
-  }
+    if (!error) {
+      setSets(prev => prev.map(s => s.id === set.id ? { ...s, enabled: !s.enabled } : s));
+      invalidateSetsCache();
+    }
+  };
 
   const handleUploadAsset = async (setId: string, field: 'logo_url' | 'logo_url_pt' | 'symbol_url', file: File) => {
     const ext = file.name.split('.').pop();

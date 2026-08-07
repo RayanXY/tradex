@@ -28,9 +28,14 @@ export interface SetItem {
   name: string,
   name_pt: string | null,
   serie: string,
+  serie_id: string | null,
   release_date: string | null,
   ptcgo_code: string | null,
-  logo_url?: string | null,
-  total?: number | null,
-  official_count?: number | null
+  logo_url: string | null,
+  logo_url_pt: string | null,
+  symbol_url: string | null,
+  order_index: number | null,
+  enabled: boolean,
+  total: number | null,
+  official_count: number | null,
 }
