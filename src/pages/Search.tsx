@@ -96,6 +96,21 @@ const Search = () => {
   const [selectedSet, setSelectedSet] = useState<SetItem | null>(null);
   const [sortBy, setSortBy] = useState<'recent' | 'name' | 'number'>('recent');
 
+  const [masterOpen, setMasterOpen] = useState(false);
+  const [masterValues, setMasterValues] = useState<{
+    type: 'sell' | 'want' | '';
+    variant: string;
+    price: string;
+    quantity: string;
+    condition: string;
+    language: string;
+  }>({ type: '', variant: '', price: '', quantity: '', condition: '', language: '' });
+
+  const resetMaster = () => {
+    setMasterValues({ type: '', variant: '', price: '', quantity: '', condition: '', language: '' });
+    setMasterOpen(false);
+  };
+
   const openPreview = (card: PokemonCard) => {
     setPreviewIndex(displayResults.findIndex(c => c.id === card.id));
     setPreviewOpen(true);
@@ -258,6 +273,21 @@ const Search = () => {
     setQueue(prev => prev.filter(q => q.uid !== uid));
   }
 
+  const handleApplyMaster = () => {
+    setQueue(prev => prev.map(q => {
+      const updated = { ...q };
+      if (masterValues.type) updated.type = masterValues.type;
+      if (masterValues.variant) updated.variant = masterValues.variant;
+      if (masterValues.price) updated.price = masterValues.price;
+      if (masterValues.quantity) updated.quantity = masterValues.quantity;
+      if (masterValues.condition) updated.condition = masterValues.condition;
+      if (masterValues.language) updated.language = masterValues.language;
+      if (masterValues.type === 'want') updated.condition = masterValues.condition || 'ANY';
+      if (masterValues.type === 'sell' && updated.condition === 'ANY') updated.condition = masterValues.condition || 'NM';
+      return updated;
+    }));
+  };
+
   const handleAddAll = async () => {
     if (!user || queue.length === 0) return;
     const invalid = queue.some(q => q.type === 'sell' && !q.price);
@@ -282,11 +312,9 @@ const Search = () => {
       types: q.types
     }));
 
-    // Verifica duplicatas dentro da própria fila
     const queueKeys = rows.map(r => `${r.tcg_card_id}|${r.type}|${r.condition}|${r.language}|${r.variant}`);
     const hasDuplicateInQueue = queueKeys.length !== new Set(queueKeys).size;
 
-    // Verifica duplicatas contra o inventário existente
     const { data: existing } = await supabase
       .from('cards')
       .select('tcg_card_id, type, condition, language, variant')
@@ -308,6 +336,7 @@ const Search = () => {
       setInventory(prev => [...prev, ...data.map(c => ({ id: c.id, tcg_card_id: c.tcg_card_id, type: c.type }))]);
       setQueue([]);
       setQueueDrawerOpen(false);
+      resetMaster();
     }
 
     setSaving(false);
@@ -336,88 +365,209 @@ const Search = () => {
             setsBySerie={setsBySerie}
             getSerieLabel={getSerieLabel}
             handleSetClick={handleSetClick}
-          /> 
+          />
         </div>
       </div>
 
       {/* Queue drawer */}
-      <div className={`fixed top-0 right-0 h-full w-full md:max-w-md bg-[#111] border-l border-[#2a2a2a] z-50 transform transition-transform duration-300 overflow-y-auto ${queueDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
+      <div className={`fixed top-0 right-0 h-full w-full md:max-w-md bg-[#111] border-l border-[#2a2a2a] z-50 transform transition-transform duration-300 flex flex-col ${queueDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+
+        {/* Header */}
+        <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Selecionadas ({queue.length})</h2>
           <button onClick={() => setQueueDrawerOpen(false)} className="text-[#555] hover:text-[#f0f0f0] cursor-pointer text-lg">✕</button>
         </div>
-        <div className="p-4 flex flex-col gap-3">
+
+        {/* Master — fora do scroll, fica fixo naturalmente */}
+        {queue.length > 0 && (
+          <div className="shrink-0 bg-[#111] border-b border-[#2a2a2a]">
+            <button
+              onClick={() => setMasterOpen(prev => !prev)}
+              className="w-full flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+            >
+              <p className="text-[10px] text-[#555] uppercase tracking-wider font-semibold">Aplicar a todas</p>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-[#555] transition-transform shrink-0 ${masterOpen ? 'rotate-180' : ''}`}>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {masterOpen && (
+              <div className="px-4 pb-3 flex flex-col gap-2">
+
+                {/* Linha 1: Tipo + Variante */}
+                <div className="flex flex-col gap-1">
+                  <div className="grid grid-cols-[1fr_1fr_120px] gap-2">
+                    <span className="text-[10px] text-[#444] uppercase tracking-wider col-span-2">Tipo</span>
+                    <span className="text-[10px] text-[#444] uppercase tracking-wider">Variante</span>
+                  </div>
+                  <div className="grid grid-cols-[1fr_1fr_120px] gap-2 items-center">
+                    <button
+                      onClick={() => setMasterValues(prev => ({ ...prev, type: prev.type === 'sell' ? '' : 'sell' }))}
+                      className={`py-1 rounded text-xs font-semibold cursor-pointer ${masterValues.type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#555]'}`}
+                    >Vendo</button>
+                    <button
+                      onClick={() => setMasterValues(prev => ({ ...prev, type: prev.type === 'want' ? '' : 'want' }))}
+                      className={`py-1 rounded text-xs font-semibold cursor-pointer ${masterValues.type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#555]'}`}
+                    >Procuro</button>
+                    <select
+                      value={masterValues.variant}
+                      onChange={e => setMasterValues(prev => ({ ...prev, variant: e.target.value }))}
+                      className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#888] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+                    >
+                      <option value="">— variante —</option>
+                      {VARIANT_OPTIONS.map(v => (
+                        <option key={v.value} value={v.value}>{v.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Linha 2: Preço + Qtd + Condição + Língua */}
+                <div className="flex flex-col gap-1">
+                  <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2">
+                    <span className="text-[10px] text-[#444] uppercase tracking-wider">Preço</span>
+                    <span className="text-[10px] text-[#444] uppercase tracking-wider">Qtd</span>
+                    <span className="text-[10px] text-[#444] uppercase tracking-wider">Cond.</span>
+                    <span className="text-[10px] text-[#444] uppercase tracking-wider">Língua</span>
+                  </div>
+                  <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2 items-center">
+                    <input
+                      type="number"
+                      placeholder="R$"
+                      value={masterValues.price}
+                      onChange={e => setMasterValues(prev => ({ ...prev, price: e.target.value }))}
+                      min="0" step="0.01"
+                      className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#444] focus:outline-none focus:border-[#e3350d]"
+                    />
+                    <input
+                      type="number"
+                      placeholder="1"
+                      value={masterValues.quantity}
+                      onChange={e => setMasterValues(prev => ({ ...prev, quantity: e.target.value }))}
+                      min="1"
+                      className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] placeholder-[#444] focus:outline-none focus:border-[#e3350d]"
+                    />
+                    <select
+                      value={masterValues.condition}
+                      onChange={e => setMasterValues(prev => ({ ...prev, condition: e.target.value }))}
+                      className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#888] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+                    >
+                      <option value="">—</option>
+                      <option value="ANY">?</option>
+                      <option value="M">M</option>
+                      <option value="NM">NM</option>
+                      <option value="LP">LP</option>
+                      <option value="MP">MP</option>
+                      <option value="HP">HP</option>
+                      <option value="DMG">DMG</option>
+                    </select>
+                    <select
+                      value={masterValues.language}
+                      onChange={e => setMasterValues(prev => ({ ...prev, language: e.target.value }))}
+                      className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#888] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+                    >
+                      <option value="">—</option>
+                      <option value="BR">BR</option>
+                      <option value="EN">EN</option>
+                      <option value="JP">JP</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleApplyMaster}
+                  className="w-full py-1.5 bg-[#2a2a2a] hover:bg-[#333] text-[#f0f0f0] text-xs font-semibold rounded cursor-pointer transition-colors"
+                >
+                  Aplicar a todas
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Lista scrollável */}
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
           {queue.length === 0 ? (
             <p className="text-sm text-[#555]">Nenhuma carta selecionada.</p>
           ) : (
-            <>
-              {queue.map(({ uid, card, price, quantity, type, condition, language, variant }) => (
-                <div key={uid} className="flex flex-col gap-2.5 border-b border-[#2a2a2a] pb-4 last:border-0 last:pb-0">
-                  {/* Cabeçalho */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-sm font-semibold text-[#f0f0f0]">{card.name_pt ?? card.name}</span>
-                      <span className="text-xs text-[#555] mx-1">·</span>
-                      <span className="text-xs text-[#888]">{(card.set.ptcgo_code ?? card.set.id).toUpperCase()} #{card.localId}</span>
-                    </div>
-                    <button onClick={() => handleQueueRemove(uid)} className="text-xs text-[#555] hover:text-[#e3350d] cursor-pointer">✕</button>
+            queue.map(({ uid, card, price, quantity, type, condition, language, variant }) => (
+              <div key={uid} className="flex flex-col gap-2.5 border-b border-[#2a2a2a] pb-4 last:border-0 last:pb-0">
+                {/* Cabeçalho */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-semibold text-[#f0f0f0]">{card.name_pt ?? card.name}</span>
+                    <span className="text-xs text-[#555] mx-1">·</span>
+                    <span className="text-xs text-[#888]">{(card.set.ptcgo_code ?? card.set.id).toUpperCase()} #{card.localId}</span>
                   </div>
+                  <button onClick={() => handleQueueRemove(uid)} className="text-xs text-[#555] hover:text-[#e3350d] cursor-pointer">✕</button>
+                </div>
 
-                  {/* Linha 1: Tipo + Variante */}
-                  <div className="flex flex-col gap-1">
-                    <div className="grid grid-cols-[1fr_1fr_120px] gap-2">
-                      <span className="text-[10px] text-[#555] uppercase tracking-wider col-span-2">Tipo</span>
-                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Variante</span>
-                    </div>
-                    <div className="grid grid-cols-[1fr_1fr_120px] gap-2 items-center">
-                      <button onClick={() => handleQueueUpdate(uid, 'type', 'sell')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Vendo</button>
-                      <button onClick={() => handleQueueUpdate(uid, 'type', 'want')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Procuro</button>
-                      <select value={variant} onChange={e => handleQueueUpdate(uid, 'variant', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-                        {VARIANT_OPTIONS.map(v => (
-                          <option key={v.value} value={v.value}>{v.label}</option>
-                        ))}
-                      </select>
-                    </div>
+                {/* Linha 1: Tipo + Variante */}
+                <div className="flex flex-col gap-1">
+                  <div className="grid grid-cols-[1fr_1fr_120px] gap-2">
+                    <span className="text-[10px] text-[#555] uppercase tracking-wider col-span-2">Tipo</span>
+                    <span className="text-[10px] text-[#555] uppercase tracking-wider">Variante</span>
                   </div>
-
-                  {/* Linha 2: Preço + Qtd + Condição + Língua */}
-                  <div className="flex flex-col gap-1">
-                    <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2">
-                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Preço</span>
-                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Qtd</span>
-                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Cond.</span>
-                      <span className="text-[10px] text-[#555] uppercase tracking-wider">Língua</span>
-                    </div>
-                    <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2 items-center">
-                      <input type="number" placeholder={type === 'sell' ? 'R$' : 'Até R$'} value={price} onChange={e => handleQueueUpdate(uid, 'price', e.target.value)} min="0" step="0.01" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
-                      <input type="number" placeholder="1" value={quantity} onChange={e => handleQueueUpdate(uid, 'quantity', e.target.value)} min="1" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
-                      <select value={condition} onChange={e => handleQueueUpdate(uid, 'condition', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-                        {type === 'want' && <option value="ANY">?</option>}
-                        <option value="M">M</option>
-                        <option value="NM">NM</option>
-                        <option value="LP">LP</option>
-                        <option value="MP">MP</option>
-                        <option value="HP">HP</option>
-                        <option value="DMG">DMG</option>
-                      </select>
-                      <select value={language} onChange={e => handleQueueUpdate(uid, 'language', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-                        <option value="BR">BR</option>
-                        <option value="EN">EN</option>
-                        <option value="JP">JP</option>
-                      </select>
-                    </div>
+                  <div className="grid grid-cols-[1fr_1fr_120px] gap-2 items-center">
+                    <button onClick={() => handleQueueUpdate(uid, 'type', 'sell')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Vendo</button>
+                    <button onClick={() => handleQueueUpdate(uid, 'type', 'want')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Procuro</button>
+                    <select value={variant} onChange={e => handleQueueUpdate(uid, 'variant', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                      {VARIANT_OPTIONS.map(v => (
+                        <option key={v.value} value={v.value}>{v.label}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              ))}
-              <div className="flex gap-3 pt-2">
-                <button onClick={handleAddAll} disabled={saving || queue.some(q => q.type === 'sell' && !q.price)} className="flex-1 bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-2.5 text-sm cursor-pointer">
-                  {saving ? 'Salvando...' : `Adicionar ${queue.length > 1 ? `${queue.length} cartas` : 'carta'}`}
-                </button>
-                <button onClick={() => setQueue([])} className="text-sm text-[#888] hover:text-[#f0f0f0] cursor-pointer">Limpar</button>
+
+                {/* Linha 2: Preço + Qtd + Condição + Língua */}
+                <div className="flex flex-col gap-1">
+                  <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2">
+                    <span className="text-[10px] text-[#555] uppercase tracking-wider">Preço</span>
+                    <span className="text-[10px] text-[#555] uppercase tracking-wider">Qtd</span>
+                    <span className="text-[10px] text-[#555] uppercase tracking-wider">Cond.</span>
+                    <span className="text-[10px] text-[#555] uppercase tracking-wider">Língua</span>
+                  </div>
+                  <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2 items-center">
+                    <input type="number" placeholder={type === 'sell' ? 'R$' : 'Até R$'} value={price} onChange={e => handleQueueUpdate(uid, 'price', e.target.value)} min="0" step="0.01" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
+                    <input type="number" placeholder="1" value={quantity} onChange={e => handleQueueUpdate(uid, 'quantity', e.target.value)} min="1" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
+                    <select value={condition} onChange={e => handleQueueUpdate(uid, 'condition', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                      {type === 'want' && <option value="ANY">?</option>}
+                      <option value="M">M</option>
+                      <option value="NM">NM</option>
+                      <option value="LP">LP</option>
+                      <option value="MP">MP</option>
+                      <option value="HP">HP</option>
+                      <option value="DMG">DMG</option>
+                    </select>
+                    <select value={language} onChange={e => handleQueueUpdate(uid, 'language', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+                      <option value="BR">BR</option>
+                      <option value="EN">EN</option>
+                      <option value="JP">JP</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-            </>
+            ))
           )}
         </div>
+
+        {/* Rodapé fixo — só aparece quando há cartas */}
+        {queue.length > 0 && (
+          <div className="shrink-0 border-t border-[#2a2a2a] px-4 py-3 flex gap-3">
+            <button
+              onClick={handleAddAll}
+              disabled={saving || queue.some(q => q.type === 'sell' && !q.price)}
+              className="flex-1 bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-2.5 text-sm cursor-pointer"
+            >
+              {saving ? 'Salvando...' : `Adicionar ${queue.length > 1 ? `${queue.length} cartas` : 'carta'}`}
+            </button>
+            <button
+              onClick={() => { setQueue([]); resetMaster(); }}
+              className="text-sm text-[#888] hover:text-[#f0f0f0] cursor-pointer"
+            >
+              Limpar
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6 md:flex md:gap-6">
@@ -600,7 +750,7 @@ const Search = () => {
         <div className="fixed bottom-6 left-0 right-0 flex justify-center px-4 z-30">
           <div className="flex items-center gap-2 w-full max-w-sm">
             <button
-              onClick={() => setQueue([])}
+              onClick={() => { setQueue([]); resetMaster(); }}
               className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] text-[#888] hover:text-[#f0f0f0] font-semibold rounded-xl px-4 py-3 shadow-lg transition-colors cursor-pointer shrink-0 text-sm"
             >
               Limpar
@@ -617,7 +767,7 @@ const Search = () => {
               <span className="hidden sm:inline">Adicionar ({queue.length} {queue.length === 1 ? 'carta' : 'cartas'})</span>
             </button>
           </div>
-</div>
+        </div>
       )}
 
       {previewOpen && (

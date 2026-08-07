@@ -10,6 +10,8 @@ import Tabs from '../components/ui/Tabs'
 import type { TradexCard } from '../types'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import useSets from '../hooks/useSets'
+import { useShowcaseCards } from '../hooks/useShowcaseCards'
+import SetLogo from '../components/ui/SetLogo'
 
 const PREVIEW_CARDS = 8;
 const CARDS_PER_PAGE = 12;
@@ -30,9 +32,20 @@ const Dashboard = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'view' | 'manage'>('view');
   const [modalList, setModalList] = useState<'sell' | 'want' | null>(null);
+  const [manageView, setManageView] = useState<'list' | 'bySet'>('list');
+  const [openSets, setOpenSets] = useState<Record<string, boolean>>({});
 
-  const [editValues, setEditValues] = useState<{ price: string; quantity: string; condition: string; language: string }>({
-    price: '', quantity: '1', condition: 'NM', language: 'BR'
+  const { groups: sellGroups, loading: loadingSellGroups } = useShowcaseCards(
+    manageView === 'bySet' ? (user?.id ?? null) : null,
+    'sell'
+  );
+  const { groups: wantGroups, loading: loadingWantGroups } = useShowcaseCards(
+    manageView === 'bySet' ? (user?.id ?? null) : null,
+    'want'
+  );
+
+  const [editValues, setEditValues] = useState<{ price: string; quantity: string; condition: string; language: string; type: 'sell' | 'want'; variant: string }>({
+    price: '', quantity: '1', condition: 'NM', language: 'BR', type: 'sell', variant: 'normal'
   });
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -49,13 +62,13 @@ const Dashboard = () => {
     const index = cards.findIndex(c => c.id === card.id);
     setModalList(list);
     setModalIndex(index);
-  };
+  }
 
   const closeDialog = () => setConfirmDialog(prev => ({ ...prev, open: false }));
 
   const askConfirm = (opts: Omit<typeof confirmDialog, 'open'>) => {
     setConfirmDialog({ open: true, ...opts });
-  };
+  }
 
   const handleRemoveConfirmed = (id: string, type: 'sell' | 'want') => {
     askConfirm({
@@ -64,7 +77,7 @@ const Dashboard = () => {
       confirmLabel: 'Remover',
       onConfirm: () => { handleRemove(id, type); closeDialog(); },
     });
-  };
+  }
 
   const handleRemoveAll = async (type: 'sell' | 'want') => {
     askConfirm({
@@ -91,7 +104,7 @@ const Dashboard = () => {
         }
       },
     });
-  };
+  }
 
   const loadCounts = useCallback(async () => {
     if (!user) return;
@@ -171,6 +184,14 @@ const Dashboard = () => {
     loadWanting();
   }, [isSearching]);
 
+  useEffect(() => {
+    if (sellGroups.length === 0 && wantGroups.length === 0) return;
+    const initial: Record<string, boolean> = {};
+    if (sellGroups[0]) initial[`sell-${sellGroups[0].setId}`] = true;
+    if (wantGroups[0]) initial[`want-${wantGroups[0].setId}`] = true;
+    setOpenSets(initial);
+  }, [sellGroups, wantGroups]);
+
   useEffect(() => { loadCounts(); }, [loadCounts]);
   useEffect(() => { loadSelling(); }, [loadSelling]);
   useEffect(() => { loadWanting(); }, [loadWanting]);
@@ -200,7 +221,7 @@ const Dashboard = () => {
         loadWanting();
       }
     }
-  };
+  }
 
   const handleEditStart = (card: TradexCard) => {
     setEditingId(card.id);
@@ -209,38 +230,66 @@ const Dashboard = () => {
       quantity: card.quantity.toString(),
       condition: card.condition,
       language: card.language,
+      type: card.type as 'sell' | 'want',
+      variant: card.variant ?? 'normal',
     });
-  };
+  }
 
   const handleEditCancel = () => setEditingId(null);
 
   const handleEditSave = async (card: TradexCard) => {
-    await supabase.from('cards').update({
-      price: editValues.price ? parseFloat(editValues.price) : null,
-      quantity: parseInt(editValues.quantity),
-      condition: editValues.condition,
-      language: editValues.language,
-    }).eq('id', card.id);
-
     const updated = {
       price: editValues.price ? parseFloat(editValues.price) : null,
       quantity: parseInt(editValues.quantity),
       condition: editValues.condition,
       language: editValues.language,
+      type: editValues.type,
+      variant: editValues.variant,
     };
 
-    if (card.type === 'sell') {
-      setSelling(prev => prev.map(c => c.id === card.id ? { ...c, ...updated } : c));
+    await supabase.from('cards').update(updated).eq('id', card.id);
+
+    const typeChanged = editValues.type !== card.type;
+
+    if (typeChanged) {
+      // Remove da lista original e insere na lista destino
+      if (card.type === 'sell') {
+        setSelling(prev => prev.filter(c => c.id !== card.id));
+        setSellTotal(prev => prev - 1);
+        setWanting(prev => [{ ...card, ...updated }, ...prev]);
+        setWantTotal(prev => prev + 1);
+      } else {
+        setWanting(prev => prev.filter(c => c.id !== card.id));
+        setWantTotal(prev => prev - 1);
+        setSelling(prev => [{ ...card, ...updated }, ...prev]);
+        setSellTotal(prev => prev + 1);
+      }
     } else {
-      setWanting(prev => prev.map(c => c.id === card.id ? { ...c, ...updated } : c));
+      if (card.type === 'sell') {
+        setSelling(prev => prev.map(c => c.id === card.id ? { ...c, ...updated } : c));
+      } else {
+        setWanting(prev => prev.map(c => c.id === card.id ? { ...c, ...updated } : c));
+      }
     }
 
     setEditingId(null);
-  };
+  }
 
   const ManageCard = ({ card, type }: { card: TradexCard; type: 'sell' | 'want' }) => (
     <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 flex flex-col gap-3">
       <div className="flex items-center gap-2">
+        {/* DETAILS */}
+        <button
+          onClick={() => openModal(card, type)}
+          className="shrink-0 w-12 rounded overflow-hidden cursor-pointer opacity-90 hover:opacity-100 transition-opacity"
+          title="Ver detalhes"
+        >
+          <img
+            src={card.image_url ?? '/back-card-art.webp'}
+            alt={card.name_pt ?? card.name}
+            className="w-full h-auto object-cover"
+          />
+        </button>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-[#f0f0f0] truncate">{card.name_pt ?? card.name}</p>
           <p className="text-xs text-[#888]">
@@ -255,11 +304,6 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => openModal(card, type)} className="text-[#555] hover:text-[#f0f0f0] transition-colors cursor-pointer" title="Ver detalhes">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-          </button>
           <button onClick={() => editingId === card.id ? handleEditCancel() : handleEditStart(card)} className={`transition-colors cursor-pointer ${editingId === card.id ? 'text-[#f4d03f]' : 'text-[#555] hover:text-[#f0f0f0]'}`} title="Editar">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -305,6 +349,27 @@ const Dashboard = () => {
               <option value="BR">BR</option>
               <option value="EN">EN</option>
               <option value="JP">JP</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-[#555] uppercase tracking-wider">Tipo</label>
+            <select value={editValues.type} onChange={e => setEditValues(prev => ({ ...prev, type: e.target.value as 'sell' | 'want' }))} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+              <option value="sell">Vendo</option>
+              <option value="want">Procuro</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-[#555] uppercase tracking-wider">Variante</label>
+            <select value={editValues.variant} onChange={e => setEditValues(prev => ({ ...prev, variant: e.target.value }))} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
+              <option value="normal">Normal</option>
+              <option value="holo">Holo</option>
+              <option value="reverse">Reverse</option>
+              <option value="promo">Promo</option>
+              <option value="pre_release">Pré-release</option>
+              <option value="energy_pattern">Energy Pattern</option>
+              <option value="pokeball">Poké Ball</option>
+              <option value="masterball">Master Ball</option>
+              <option value="cosmos">Cosmos</option>
             </select>
           </div>
           <div className="flex flex-col justify-end gap-1">
@@ -383,14 +448,29 @@ const Dashboard = () => {
 
         {activeTab === 'manage' && (
           <>
-            <div className="mb-6">
+            <div className="flex gap-2 mb-6">
               <input
                 type="text"
                 placeholder="Buscar por nome ou set..."
                 value={manageSearch}
                 onChange={e => setManageSearch(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors"
+                disabled={manageView === 'bySet'}
+                className={`flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors ${manageView === 'bySet' ? 'opacity-30 cursor-not-allowed' : ''}`}
               />
+              <div className="flex rounded-lg overflow-hidden border border-[#2a2a2a] shrink-0">
+                <button
+                  onClick={() => setManageView('list')}
+                  className={`px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${manageView === 'list' ? 'bg-[#e3350d] text-white' : 'bg-[#1a1a1a] text-[#888] hover:text-[#f0f0f0]'}`}
+                >
+                  Lista
+                </button>
+                <button
+                  onClick={() => setManageView('bySet')}
+                  className={`px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${manageView === 'bySet' ? 'bg-[#e3350d] text-white' : 'bg-[#1a1a1a] text-[#888] hover:text-[#f0f0f0]'}`}
+                >
+                  Por set
+                </button>
+              </div>
             </div>
 
             <section className="mb-10">
@@ -406,6 +486,39 @@ const Dashboard = () => {
                 <p className="text-sm text-[#555]">Carregando...</p>
               ) : selling.length === 0 ? (
                 <p className="text-sm text-[#555]">{isSearching ? 'Nenhuma carta encontrada.' : 'Nenhuma carta adicionada ainda.'}</p>
+              ) : manageView === 'bySet' ? (
+                loadingSellGroups ? (
+                  <p className="text-sm text-[#555]">Carregando...</p>
+                ) : sellGroups.length === 0 ? (
+                  <p className="text-sm text-[#555]">Nenhuma carta adicionada ainda.</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {sellGroups.map(group => {
+                      const key = `sell-${group.setId}`;
+                      const isOpen = openSets[key] ?? false;
+                      return (
+                        <div key={key} className="border border-[#2a2a2a] rounded-xl overflow-hidden">
+                          <button
+                            onClick={() => setOpenSets(prev => ({ ...prev, [key]: !isOpen }))}
+                            className="w-full flex items-center gap-3 px-4 py-3 bg-[#1a1a1a] hover:bg-[#222] transition-colors cursor-pointer"
+                          >
+                            <SetLogo logoUrl={group.logoUrl} name={group.setName} className="h-7 w-20" />
+                            <span className="flex-1 text-left text-sm font-semibold text-[#f0f0f0] truncate">{group.setName}</span>
+                            <span className="text-xs text-[#555]">{group.cards.length} carta{group.cards.length !== 1 ? 's' : ''}</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-[#555] transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}>
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </button>
+                          {isOpen && (
+                            <div className="flex flex-col gap-2 p-3 bg-[#0f0f0f]">
+                              {group.cards.map(card => <ManageCard key={card.id} card={card} type="sell" />)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
@@ -429,6 +542,39 @@ const Dashboard = () => {
                 <p className="text-sm text-[#555]">Carregando...</p>
               ) : wanting.length === 0 ? (
                 <p className="text-sm text-[#555]">{isSearching ? 'Nenhuma carta encontrada.' : 'Nenhuma carta na lista ainda.'}</p>
+              ) : manageView === 'bySet' ? (
+                loadingWantGroups ? (
+                  <p className="text-sm text-[#555]">Carregando...</p>
+                ) : wantGroups.length === 0 ? (
+                  <p className="text-sm text-[#555]">Nenhuma carta na lista ainda.</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {wantGroups.map(group => {
+                      const key = `want-${group.setId}`;
+                      const isOpen = openSets[key] ?? false;
+                      return (
+                        <div key={key} className="border border-[#2a2a2a] rounded-xl overflow-hidden">
+                          <button
+                            onClick={() => setOpenSets(prev => ({ ...prev, [key]: !isOpen }))}
+                            className="w-full flex items-center gap-3 px-4 py-3 bg-[#1a1a1a] hover:bg-[#222] transition-colors cursor-pointer"
+                          >
+                            <SetLogo logoUrl={group.logoUrl} name={group.setName} className="h-7 w-20" />
+                            <span className="flex-1 text-left text-sm font-semibold text-[#f0f0f0] truncate">{group.setName}</span>
+                            <span className="text-xs text-[#555]">{group.cards.length} carta{group.cards.length !== 1 ? 's' : ''}</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-[#555] transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}>
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                          </button>
+                          {isOpen && (
+                            <div className="flex flex-col gap-2 p-3 bg-[#0f0f0f]">
+                              {group.cards.map(card => <ManageCard key={card.id} card={card} type="want" />)}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
