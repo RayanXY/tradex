@@ -94,6 +94,10 @@ const Navbar = () => {
                   </Link>
                 </>
               )}
+
+              {user.role === 'admin' && (
+                <Link to="/admin" className="text-sm text-[#888] hover:text-[#f0f0f0] transition-colors">Dashboard</Link>
+              )}
               
               <button onClick={handleLogout} className="text-sm text-[#888] hover:text-[#e3350d] transition-colors cursor-pointer">
                 Sair

@@ -102,6 +102,7 @@ const Admin = () => {
     setEditingId(set.id);
     setEditValues({
       serie: set.serie,
+      serie_id: set.serie_id,
       ptcgo_code: set.ptcgo_code ?? '',
       release_date: set.release_date ?? '',
       order_index: set.order_index,
@@ -117,6 +118,7 @@ const Admin = () => {
       .from('sets')
       .update({
         serie: editValues.serie,
+        serie_id: editValues.serie_id ?? null,
         ptcgo_code: editValues.ptcgo_code || null,
         release_date: editValues.release_date || null,
         order_index: editValues.order_index ?? null,
@@ -157,9 +159,13 @@ const Admin = () => {
     const { error: uploadError } = await supabase.storage
       .from('set-assets')
       .upload(path, file, { upsert: true });
-    if (uploadError) return;
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return;
+    }
     const { data } = supabase.storage.from('set-assets').getPublicUrl(path);
-    setEditValues(prev => ({ ...prev, [field]: data.publicUrl }));
+    const urlWithBust = `${data.publicUrl}?t=${Date.now()}`;
+    setEditValues(prev => ({ ...prev, [field]: urlWithBust }));
   };
 
   const handleToggleRole = async (user: UserItem) => {
@@ -602,6 +608,23 @@ const Admin = () => {
                               <tr className="border-b border-[#2a2a2a] bg-[#111]">
                                 <td colSpan={4} className="px-4 py-4">
                                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    {/* SERIES */}
+                                    <div>
+                                      <label className="text-xs text-[#555] mb-1 block">Série</label>
+                                      <select
+                                        value={editValues.serie_id ?? ''}
+                                        onChange={e => setEditValues(prev => ({ ...prev, serie_id: e.target.value || null }))}
+                                        className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d]"
+                                      >
+                                        <option value="">— Sem série —</option>
+                                        {[...series]
+                                          .sort((a, b) => (b.order_index ?? -1) - (a.order_index ?? -1))
+                                          .map(s => (
+                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                          ))
+                                        }
+                                      </select>
+                                    </div>
 
                                     {/* ORDER */}
                                     <div>
@@ -694,7 +717,6 @@ const Admin = () => {
                                         className="w-full text-xs text-[#888] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-[#2a2a2a] file:text-[#f0f0f0] file:cursor-pointer"
                                       />
                                     </div>
-
                                   </div>
                                 </td>
                               </tr>
