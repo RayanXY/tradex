@@ -4,7 +4,6 @@ import { useParams, Link } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import CardItem from '../components/cards/CardItem'
 import CardModal from '../components/cards/CardModal'
-import Tabs from '../components/ui/Tabs'
 import { useShowcaseCards } from '../hooks/useShowcaseCards'
 import type { TradexCard, Seller } from '../types'
 import Pagination from '../components/ui/Pagination'
@@ -12,10 +11,10 @@ import SetLogo from '../components/ui/SetLogo'
 import useSets from '../hooks/useSets'
 import AddCardsFAB from '../components/ui/AddCardsFAB'
 
-type ViewMode = 'grade' | 'sets';
+type ViewMode = 'allCards' | 'bySets';
 
 const Wishlist = () => {
-const { sets } = useSets();
+  const { sets } = useSets();
 
   const [gradePage, setGradePage] = useState(1);
   const [modalIndex, setModalIndex] = useState(0);
@@ -24,7 +23,7 @@ const { sets } = useSets();
   const [gradeSearch, setGradeSearch] = useState('');
   const [loadingSeller, setLoadingSeller] = useState(true);
   const [seller, setSeller] = useState<Seller | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('grade');
+  const [viewMode, setViewMode] = useState<ViewMode>('bySets');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [openSets, setOpenSets] = useState<Set<string>>(new Set());
 
@@ -32,7 +31,7 @@ const { sets } = useSets();
     setModalIndex(cards.findIndex(c => c.id === card.id));
     setModalOpen(true);
   }
-  
+
   const { phone } = useParams<{ phone: string }>();
   const { cards, groups, loading: loadingCards } = useShowcaseCards(seller?.id ?? null, 'want');
 
@@ -140,83 +139,75 @@ const { sets } = useSets();
           <p className="text-sm text-[#555]">Nenhuma carta na lista de busca.</p>
         ) : (
           <>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-xs text-[#555]">Selecione as cartas que você tem e clique em "Oferecer".</p>
-              <Tabs
-                tabs={[
-                  { id: 'grade', label: 'Grade' },
-                  { id: 'sets', label: 'Por set' },
-                ]}
-                active={viewMode}
-                onChange={id => {
-                  setViewMode(id as ViewMode);
-                  setGradePage(1);
-                  setGradeSearch('');
-                }}
+            <p className="text-xs text-[#555] mb-4">Selecione as cartas que você tem e clique em "Oferecer".</p>
+
+            <div className="flex gap-2 mb-6">
+              <input
+                type="text"
+                placeholder="Buscar por nome ou set..."
+                value={gradeSearch}
+                onChange={e => { setGradeSearch(e.target.value); setGradePage(1); }}
+                disabled={viewMode === 'bySets'}
+                className={`flex-1 min-w-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#3b82f6] transition-colors ${viewMode === 'bySets' ? 'opacity-30 cursor-not-allowed' : ''}`}
               />
+              <div className="flex rounded-lg overflow-hidden border border-[#2a2a2a] shrink-0">
+                <button
+                  onClick={() => { setViewMode('bySets'); setGradeSearch(''); setGradePage(1); }}
+                  className={`w-20 py-2 text-xs font-semibold text-center transition-colors cursor-pointer ${viewMode === 'bySets' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a1a1a] text-[#888] hover:text-[#f0f0f0]'}`}
+                >
+                  Expansões
+                </button>
+                <button
+                  onClick={() => setViewMode('allCards')}
+                  className={`w-20 py-2 text-xs font-semibold text-center transition-colors cursor-pointer ${viewMode === 'allCards' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a1a1a] text-[#888] hover:text-[#f0f0f0]'}`}
+                >
+                  Todas
+                </button>
+              </div>
             </div>
 
-            {viewMode === 'grade' && (
-              <>
-                <input
-                  type="text"
-                  placeholder="Buscar por nome ou set..."
-                  value={gradeSearch}
-                  onChange={e => { setGradeSearch(e.target.value); setGradePage(1); }}
-                  className="w-full mb-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#3b82f6] transition-colors"
-                />
-                {(() => {
-                  const isSearching = gradeSearch.trim().length > 0;
-                  const filtered = isSearching
-                    ? cards.filter(c =>
-                        c.name.toLowerCase().includes(gradeSearch.toLowerCase()) ||
-                        c.set_name.toLowerCase().includes(gradeSearch.toLowerCase())
-                      )
-                    : cards;
-                  const totalPages = Math.ceil(filtered.length / 20);
-                  const paginated = isSearching ? filtered : filtered.slice((gradePage - 1) * 20, gradePage * 20);
-                  return (
-                    <>
-                      {paginated.length === 0
-                        ? <p className="text-sm text-[#555]">Nenhuma carta encontrada.</p>
-                        : renderCards(paginated)
-                      }
-                      {!isSearching && totalPages > 1 && (
-                        <Pagination current={gradePage} total={totalPages} onChange={setGradePage} />
-                      )}
-                    </>
-                  );
-                })()}
-              </>
-            )}
+            {viewMode === 'allCards' && (() => {
+              const isSearching = gradeSearch.trim().length > 0;
+              const filtered = isSearching
+                ? cards.filter(c =>
+                    c.name.toLowerCase().includes(gradeSearch.toLowerCase()) ||
+                    c.set_name.toLowerCase().includes(gradeSearch.toLowerCase())
+                  )
+                : cards;
+              const totalPages = Math.ceil(filtered.length / 20);
+              const paginated = isSearching ? filtered : filtered.slice((gradePage - 1) * 20, gradePage * 20);
+              return (
+                <>
+                  {paginated.length === 0
+                    ? <p className="text-sm text-[#555]">Nenhuma carta encontrada.</p>
+                    : renderCards(paginated)
+                  }
+                  {!isSearching && totalPages > 1 && (
+                    <Pagination current={gradePage} total={totalPages} onChange={setGradePage} />
+                  )}
+                </>
+              );
+            })()}
 
-            {viewMode === 'sets' && (
+            {viewMode === 'bySets' && (
               <div className="flex flex-col gap-2">
                 {groups.map((group) => {
                   const isOpen = openSets.has(group.setId);
                   return (
-                    <div key={group.setId} className="border border-[#222] rounded-xl overflow-hidden">
+                    <div key={group.setId} className="border border-[#2a2a2a] rounded-xl overflow-hidden">
                       <button
                         onClick={() => setOpenSets(prev => {
                           const next = new Set(prev);
                           next.has(group.setId) ? next.delete(group.setId) : next.add(group.setId);
                           return next;
                         })}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-[#1a1a1a] hover:bg-[#222] transition-colors cursor-pointer"
+                        className="w-full flex items-center gap-3 px-4 py-3 bg-[#1a1a1a] hover:bg-[#222] transition-colors cursor-pointer"
                       >
-                        <div className="flex items-center gap-3">
-                          <SetLogo logoUrl={group.logoUrl} name={group.setName} />
-                          <span className="text-sm font-semibold text-[#f0f0f0]">{group.setName}</span>
-                          <span className="text-xs text-[#555]">
-                            {group.cards.length} {group.cards.length === 1 ? 'carta' : 'cartas'}
-                          </span>
-                        </div>
-                        <svg
-                          width="12" height="12" viewBox="0 0 24 24" fill="none"
-                          stroke="currentColor" strokeWidth="2.5"
-                          className={`text-[#555] transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                        >
-                          <path d="M6 9l6 6 6-6"/>
+                        <SetLogo logoUrl={group.logoUrl} name={group.setName} className="h-7 w-20" />
+                        <span className="flex-1 text-left text-sm font-semibold text-[#f0f0f0] truncate">{group.setName}</span>
+                        <span className="text-xs text-[#555]">{group.cards.length} carta{group.cards.length !== 1 ? 's' : ''}</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-[#555] transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}>
+                          <polyline points="6 9 12 15 18 9" />
                         </svg>
                       </button>
                       {isOpen && (

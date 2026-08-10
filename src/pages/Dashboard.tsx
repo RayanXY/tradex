@@ -33,7 +33,7 @@ const Dashboard = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'view' | 'manage'>('view');
   const [modalList, setModalList] = useState<'sell' | 'want' | null>(null);
-  const [manageView, setManageView] = useState<'list' | 'bySet'>('list');
+  const [manageView, setManageView] = useState<'list' | 'bySet'>('bySet');
   const [openSets, setOpenSets] = useState<Record<string, boolean>>({});
 
   const { groups: sellGroups, loading: loadingSellGroups } = useShowcaseCards(
@@ -456,16 +456,16 @@ const Dashboard = () => {
               />
               <div className="flex rounded-lg overflow-hidden border border-[#2a2a2a] shrink-0">
                 <button
-                  onClick={() => setManageView('list')}
-                  className={`px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${manageView === 'list' ? 'bg-[#e3350d] text-white' : 'bg-[#1a1a1a] text-[#888] hover:text-[#f0f0f0]'}`}
+                  onClick={() => setManageView('bySet')}
+                  className={`w-20 py-2 text-xs font-semibold text-center transition-colors cursor-pointer ${manageView === 'bySet' ? 'bg-[#e3350d] text-white' : 'bg-[#1a1a1a] text-[#888] hover:text-[#f0f0f0]'}`}
                 >
-                  Lista
+                  Expansões
                 </button>
                 <button
-                  onClick={() => setManageView('bySet')}
-                  className={`px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${manageView === 'bySet' ? 'bg-[#e3350d] text-white' : 'bg-[#1a1a1a] text-[#888] hover:text-[#f0f0f0]'}`}
+                  onClick={() => setManageView('list')}
+                  className={`w-20 py-2 text-xs font-semibold text-center transition-colors cursor-pointer ${manageView === 'list' ? 'bg-[#e3350d] text-white' : 'bg-[#1a1a1a] text-[#888] hover:text-[#f0f0f0]'}`}
                 >
-                  Por set
+                  Todas
                 </button>
               </div>
             </div>
