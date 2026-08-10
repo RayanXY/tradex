@@ -21,7 +21,7 @@ export const SERIES_EN_ONLY = new Set([
   'misc', 'base', 'gym', 'neo', 'lc', 'ecard', 'ex', 'pop', 'tk', 'dp', 'pl'
 ]);
 
-export const SETS_EN_IMAGES = new Set(['mep']);
+export const SETS_EN_IMAGES = new Set(['mep', 'sma']);
 
 export const getLocalizedImageUrl = (imageUrl: string, language?: string): string => {
   if (!imageUrl) return imageUrl;

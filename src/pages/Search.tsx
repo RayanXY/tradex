@@ -78,7 +78,7 @@ const SidebarContent = ({ seriesOrder, openSeries, selectedSet, toggleSerie, set
 
 const Search = () => {
   const { user } = useAuth();
-  const { results, loading: searching, search, clear } = usePokemonSearch();
+  const { results, loading: searching, error, search, clear } = usePokemonSearch();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [page, setPage] = useState(1);
@@ -485,7 +485,6 @@ const Search = () => {
           ) : (
             queue.map(({ uid, card, price, quantity, type, condition, language, variant }) => (
               <div key={uid} className="flex flex-col gap-2.5 border-b border-[#2a2a2a] pb-4 last:border-0 last:pb-0">
-                {/* Cabeçalho */}
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-sm font-semibold text-[#f0f0f0]">{card.name_pt ?? card.name}</span>
@@ -733,6 +732,11 @@ const Search = () => {
               )}
             </section>
           )}
+
+          {!isSetSearch && !searching && error && (
+            <p className="text-sm text-[#555] text-center py-8">{error}</p>
+          )}
+
           {isSetSearch && !loadingSet && filteredSetResults.length === 0 && setFilter.trim() && (
             <p className="text-sm text-[#555] text-center py-8">Nenhuma carta encontrada para "{setFilter}".</p>
           )}

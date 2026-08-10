@@ -49,9 +49,13 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose, sets = [] }: C
   const { details, loading } = useCardDetails(tcgId);
   const [accordionOpen, setAccordionOpen] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [animKey, setAnimKey] = useState(0);
+  const [slideClass, setSlideClass] = useState('');
 
   const goTo = (index: number) => {
     if (index < 0 || index >= cards.length) return;
+    setSlideClass(index > currentIndex ? 'card-slide-right' : 'card-slide-left');
+    setAnimKey(k => k + 1);
     onIndexChange(index);
   }
 
@@ -162,54 +166,56 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose, sets = [] }: C
         </button>
 
         {/* 1. NAME */}
-        <div className="relative z-10 px-8 text-center">
-          <p className="font-bold text-[#f0f0f0] text-xl leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
-            {isTradex
-              ? ((card as TradexCard).name_pt ?? card.name)
-              : ((card as any).name_pt ?? card.name)
-            }
-            {localId && <span className="text-[#555] font-normal text-base ml-2">#{localId}</span>}
-          </p>
-          <p className="text-sm text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{setName}</p>
-        </div>
-
-        {/* 2. IMAGE PLACEHOLDER */}
-        <div className="flex justify-center">
-          <div className="relative w-80">
-            {!imgLoaded && (
-              <img
-                src="/back-card-art.webp"
-                alt="carregando..."
-                className="w-full rounded-xl"
-              />
-            )}
-            <img
-              key={imageUrl}
-              src={imageUrl}
-              alt={card.name}
-              onLoad={() => setImgLoaded(true)}
-              className={`w-full rounded-xl shadow-lg transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
-            />
-          </div>
-        </div>
-
-        {/* CARD COUNTER */}
-        {cards.length > 1 && (
-          <div className="relative z-10">
-            <p className="text-center text-xs text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
-              {currentIndex + 1} / {cards.length}
+        <div key={animKey} className={`flex flex-col gap-2 ${slideClass}`}>
+          <div className="relative z-10 px-8 text-center">
+            <p className="font-bold text-[#f0f0f0] text-xl leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+              {isTradex
+                ? ((card as TradexCard).name_pt ?? card.name)
+                : ((card as any).name_pt ?? card.name)
+              }
+              {localId && <span className="text-[#555] font-normal text-base ml-2">#{localId}</span>}
             </p>
+            <p className="text-sm text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{setName}</p>
           </div>
-        )}
 
-        {/* 3. SET'S LOGO */}
-        <div className="flex justify-center h-8">
-          {setLogoUrl
-            ? <img src={setLogoUrl} alt={setName} className="h-8 object-contain opacity-80" />
-            : details?.set?.logo
-            ? <img src={`${details.set.logo}.webp`} alt={details.set.name} className="h-8 object-contain opacity-80" />
-            : <div className="h-8 w-32 rounded bg-[#2a2a2a] animate-pulse" />
-          }
+          {/* 2. IMAGE PLACEHOLDER */}
+          <div className="flex justify-center">
+            <div className="relative w-80">
+              {!imgLoaded && (
+                <img
+                  src="/back-card-art.webp"
+                  alt="carregando..."
+                  className="w-full rounded-xl"
+                />
+              )}
+              <img
+                key={imageUrl}
+                src={imageUrl}
+                alt={card.name}
+                onLoad={() => setImgLoaded(true)}
+                className={`w-full rounded-xl shadow-lg transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}
+              />
+            </div>
+          </div>
+
+          {/* CARD COUNTER */}
+          {cards.length > 1 && (
+            <div className="relative z-10">
+              <p className="text-center text-xs text-[#a3a3a3]" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                {currentIndex + 1} / {cards.length}
+              </p>
+            </div>
+          )}
+
+          {/* 3. SET'S LOGO */}
+          <div className="flex justify-center h-8">
+            {setLogoUrl
+              ? <img src={setLogoUrl} alt={setName} className="h-8 object-contain opacity-80" />
+              : details?.set?.logo
+              ? <img src={`${details.set.logo}.webp`} alt={details.set.name} className="h-8 object-contain opacity-80" />
+              : <div className="h-8 w-32 rounded bg-[#2a2a2a] animate-pulse" />
+            }
+          </div>
         </div>
 
         {/* 4. CARD'S DETAILS ACCONDION */}

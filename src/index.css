@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@keyframes slide-in-right {
+  from { transform: translateX(60px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-60px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+.card-slide-right { animation: slide-in-right 220ms ease-out both; }
+.card-slide-left  { animation: slide-in-left  220ms ease-out both; }

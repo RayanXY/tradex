@@ -151,7 +151,7 @@ const usePokemonSearch = () => {
             localId: c.localId,
             image: c.image ?? '',
             set: {
-              id: c.set?.id ?? c.id.split('-')[0],
+              id: c.set?.id ?? c.id.split('-').slice(0, -1).join('-'),
               name: c.set?.name ?? '',
               ptcgo_code: null,
             },
@@ -169,7 +169,7 @@ const usePokemonSearch = () => {
             localId: c.localId,
             image: c.image ?? '',
             set: {
-              id: c.set?.id ?? c.id.split('-')[0],
+              id: c.set?.id ?? c.id.split('-').slice(0, -1).join('-'),
               name: c.set?.name ?? '',
               ptcgo_code: null,
             },
