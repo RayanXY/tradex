@@ -7,6 +7,7 @@ interface SerieItem {
   name: string,
   name_pt: string | null,
   order_index: number | null,
+  tcgdex_serie_id: string | null
 }
 
 let cachedSets: SetItem[] | null = null;
@@ -32,7 +33,7 @@ const useSets = () => {
         .eq('enabled', true),
       supabase
         .from('series')
-        .select('id, name, name_pt, order_index')
+        .select('id, name, name_pt, order_index, tcgdex_serie_id')
         .order('order_index', { ascending: false, nullsFirst: false }),
     ]).then(([{ data: setsData }, { data: seriesData }]) => {
       cachedSets = (setsData ?? []).sort((a, b) =>
@@ -62,12 +63,14 @@ const useSets = () => {
     return s?.name_pt ?? s?.name ?? serieId;
   };
 
+  const getSerieById = (serieId: string) => series.find(s => s.id === serieId);
+
   const invalidate = () => {
     cachedSets = null;
     cachedSeries = null;
   };
 
-  return { sets, series, loading, seriesOrder, setsBySerie, getSerieLabel, invalidate }
+  return { sets, series, loading, seriesOrder, setsBySerie, getSerieLabel, getSerieById, invalidate }
 }
 
 export default useSets

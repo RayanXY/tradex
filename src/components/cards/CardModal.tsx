@@ -5,7 +5,7 @@ import useCardDetails from '../../hooks/useCardDetails'
 import type { PokemonCard } from '../../hooks/usePokemonSearch'
 import VariantOverlay from './VariantOverlay'
 import { rarityTier, tierLabel } from '../../constants/rarities';
-import { conditionColor, languageCountry, getLocalizedImageUrl } from '../../constants/cards'
+import { conditionColor, languageCountry, getLocalizedImageUrl, SETS_EN_IMAGES } from '../../constants/cards'
 
 type CardModalCard =
   | TradexCard
@@ -80,7 +80,9 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose, sets = [] }: C
 
   const isTradex = isTradexCard(card);
   const rawUrl = isTradex ? card.image_url : card.image + '/low.webp';
-  const imageUrl = getLocalizedImageUrl(rawUrl, isTradex ? card.language : 'BR').replace('/low.webp', '/high.webp');
+  const cardSetIdForLang = isTradex ? card.tcg_card_id.split('-').slice(0, -1).join('-') : card.set.id;
+  const imageLang = isTradex ? card.language : (SETS_EN_IMAGES.has(cardSetIdForLang) ? 'EN' : 'BR');
+  const imageUrl = getLocalizedImageUrl(rawUrl, imageLang).replace('/low.webp', '/high.webp');
   const setName = isTradex ? card.set_name : card.set.name;
   const localId = isTradex ? null : (card as any).localId;
   const c = isTradex ? (conditionColor[card.condition] ?? conditionColor['NM']) : null;

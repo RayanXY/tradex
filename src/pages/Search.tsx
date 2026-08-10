@@ -11,6 +11,7 @@ import useSets from '../hooks/useSets'
 import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
 import { VARIANT_OPTIONS } from '../constants/variants';
 import SetLogo from '../components/ui/SetLogo'
+import { SETS_EN_IMAGES } from '../constants/cards'
 
 interface QueuedCard {
   uid: string,
@@ -116,7 +117,7 @@ const Search = () => {
     setPreviewOpen(true);
   }
 
-  const { sets, series: _, loading: loadingSets, seriesOrder, setsBySerie, getSerieLabel } = useSets();
+  const { sets, series: _, loading: loadingSets, seriesOrder, setsBySerie, getSerieLabel, getSerieById } = useSets();
 
   useEffect(() => {
     if (!user) return;
@@ -183,7 +184,7 @@ const Search = () => {
     ]);
 
     const ptCards = Array.isArray(ptData) ? ptData.filter((c: any) => c.id.startsWith(setId + '-')) : [];
-    const enCards = Array.isArray(enData) ? enData.filter((c: any) => c.image && c.id.startsWith(setId + '-')) : [];
+    const enCards = Array.isArray(enData) ? enData.filter((c: any) => c.id.startsWith(setId + '-')) : [];
 
     const ptMap = new Map<string, any>();
     for (const c of ptCards) ptMap.set(c.id, c);
@@ -192,12 +193,14 @@ const Search = () => {
       setOpenSeries(prev => new Set(prev).add(setInfo.serie_id!));
     }
 
+    const tcgdexSerieId = getSerieById(setInfo?.serie_id ?? '')?.tcgdex_serie_id;
+
     setSetResults(enCards.map((c: any) => ({
       id: c.id,
       name: c.name,
       name_pt: ptMap.get(c.id)?.name ?? null,
       localId: c.localId,
-      image: c.image ?? '',
+      image: c.image ?? (tcgdexSerieId ? `https://assets.tcgdex.net/en/${tcgdexSerieId}/${setId}/${c.localId}` : ''),
       set: {
         id: setId,
         name: setInfo?.name ?? '',
@@ -666,7 +669,12 @@ const Search = () => {
                         className={`group flex flex-col items-center gap-1 p-2 rounded-lg bg-[#1a1a1a] transition-colors cursor-pointer ${borderClass}`}
                       >
                         <div className="relative w-full">
-                          <CardImage src={card.image ? card.image + '/low.webp' : ''} alt={card.name} className="rounded" language="BR" />
+                          <CardImage
+                            src={card.image ? card.image + '/low.webp' : ''}
+                            alt={card.name}
+                            className="rounded"
+                            language={SETS_EN_IMAGES.has(card.set.id) ? 'EN' : 'BR'}
+                          />
                           {inQueue && (
                             <>
                               <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center z-10">
