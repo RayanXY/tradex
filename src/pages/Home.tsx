@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Navbar from '../components/layout/Navbar'
+import AddCardsFAB from '../components/ui/AddCardsFAB'
 
 interface Seller {
   id: string,
@@ -76,6 +77,8 @@ const Home = () => {
           </div>
         )}
       </main>
+
+      <AddCardsFAB />
     </div>
   )
 }

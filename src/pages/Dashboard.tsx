@@ -12,6 +12,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import useSets from '../hooks/useSets'
 import { useShowcaseCards } from '../hooks/useShowcaseCards'
 import SetLogo from '../components/ui/SetLogo'
+import AddCardsFAB from '../components/ui/AddCardsFAB'
 
 const PREVIEW_CARDS = 8;
 const CARDS_PER_PAGE = 12;
@@ -386,13 +387,9 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
       <Navbar />
-
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between gap-3 mb-6">
           <h1 className="text-2xl font-bold text-[#f0f0f0]">Meu inventário</h1>
-          <Link to="/search" className="bg-[#e3350d] hover:bg-[#c42d0b] text-white font-semibold rounded-lg px-4 py-2 text-sm transition-colors">
-            + Adicionar cartas
-          </Link>
         </div>
 
         <div className="border-b border-[#2a2a2a] mb-8">
@@ -455,7 +452,7 @@ const Dashboard = () => {
                 value={manageSearch}
                 onChange={e => setManageSearch(e.target.value)}
                 disabled={manageView === 'bySet'}
-                className={`flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors ${manageView === 'bySet' ? 'opacity-30 cursor-not-allowed' : ''}`}
+                className={`flex-1 min-w-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-2.5 text-sm text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d] transition-colors ${manageView === 'bySet' ? 'opacity-30 cursor-not-allowed' : ''}`}
               />
               <div className="flex rounded-lg overflow-hidden border border-[#2a2a2a] shrink-0">
                 <button
@@ -606,6 +603,8 @@ const Dashboard = () => {
         onConfirm={confirmDialog.onConfirm}
         onCancel={closeDialog}
       />
+
+      <AddCardsFAB />
     </div>
   )
 }

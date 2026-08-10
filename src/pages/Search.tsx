@@ -350,7 +350,6 @@ const Search = () => {
         <div className="fixed inset-0 bg-black/60 z-40" onClick={() => { setDrawerOpen(false); setQueueDrawerOpen(false); }} />
       )}
 
-      {/* Sets drawer mobile */}
       <div className={`fixed top-0 left-0 h-full w-72 bg-[#111] border-r border-[#2a2a2a] z-50 transform transition-transform duration-300 overflow-y-auto md:hidden ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Sets</h2>
@@ -369,16 +368,12 @@ const Search = () => {
         </div>
       </div>
 
-      {/* Queue drawer */}
       <div className={`fixed top-0 right-0 h-full w-full md:max-w-md bg-[#111] border-l border-[#2a2a2a] z-50 transform transition-transform duration-300 flex flex-col ${queueDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-
-        {/* Header */}
         <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-[#2a2a2a]">
           <h2 className="text-sm font-semibold text-[#888] uppercase tracking-wider">Selecionadas ({queue.length})</h2>
           <button onClick={() => setQueueDrawerOpen(false)} className="text-[#555] hover:text-[#f0f0f0] cursor-pointer text-lg">✕</button>
         </div>
 
-        {/* Master — fora do scroll, fica fixo naturalmente */}
         {queue.length > 0 && (
           <div className="shrink-0 bg-[#111] border-b border-[#2a2a2a]">
             <button
@@ -392,8 +387,6 @@ const Search = () => {
             </button>
             {masterOpen && (
               <div className="px-4 pb-3 flex flex-col gap-2">
-
-                {/* Linha 1: Tipo + Variante */}
                 <div className="flex flex-col gap-1">
                   <div className="grid grid-cols-[1fr_1fr_120px] gap-2">
                     <span className="text-[10px] text-[#444] uppercase tracking-wider col-span-2">Tipo</span>
@@ -421,7 +414,6 @@ const Search = () => {
                   </div>
                 </div>
 
-                {/* Linha 2: Preço + Qtd + Condição + Língua */}
                 <div className="flex flex-col gap-1">
                   <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2">
                     <span className="text-[10px] text-[#444] uppercase tracking-wider">Preço</span>
@@ -484,7 +476,6 @@ const Search = () => {
           </div>
         )}
 
-        {/* Lista scrollável */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
           {queue.length === 0 ? (
             <p className="text-sm text-[#555]">Nenhuma carta selecionada.</p>
@@ -501,7 +492,6 @@ const Search = () => {
                   <button onClick={() => handleQueueRemove(uid)} className="text-xs text-[#555] hover:text-[#e3350d] cursor-pointer">✕</button>
                 </div>
 
-                {/* Linha 1: Tipo + Variante */}
                 <div className="flex flex-col gap-1">
                   <div className="grid grid-cols-[1fr_1fr_120px] gap-2">
                     <span className="text-[10px] text-[#555] uppercase tracking-wider col-span-2">Tipo</span>
@@ -518,7 +508,6 @@ const Search = () => {
                   </div>
                 </div>
 
-                {/* Linha 2: Preço + Qtd + Condição + Língua */}
                 <div className="flex flex-col gap-1">
                   <div className="grid grid-cols-[1fr_40px_52px_52px] gap-2">
                     <span className="text-[10px] text-[#555] uppercase tracking-wider">Preço</span>
@@ -550,7 +539,6 @@ const Search = () => {
           )}
         </div>
 
-        {/* Rodapé fixo — só aparece quando há cartas */}
         {queue.length > 0 && (
           <div className="shrink-0 border-t border-[#2a2a2a] px-4 py-3 flex gap-3">
             <button
@@ -585,7 +573,6 @@ const Search = () => {
         </aside>
 
         <div className="flex-1 min-w-0">
-          {/* Barra de controles: botão sets mobile + filtros + ordenação */}
           <div className="flex items-center gap-2 mb-6 flex-wrap">
             <button
               type="button"
@@ -609,7 +596,6 @@ const Search = () => {
             </div>
           </div>
 
-          {/* Header do set selecionado */}
           {isSetSearch && selectedSet && (
             <>
               <div className="flex items-center gap-4 mb-4 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl">
@@ -631,7 +617,6 @@ const Search = () => {
             </>
           )}
 
-          {/* Resultados */}
           {(displayResults.length > 0 || loadingSet || searching) && (
             <section className="mb-6">
               {!isSetSearch && (

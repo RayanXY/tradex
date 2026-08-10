@@ -10,6 +10,7 @@ import type { TradexCard, Seller } from '../types'
 import Pagination from '../components/ui/Pagination'
 import SetLogo from '../components/ui/SetLogo'
 import useSets from '../hooks/useSets'
+import AddCardsFAB from '../components/ui/AddCardsFAB'
 
 type ViewMode = 'grade' | 'sets';
 
@@ -255,6 +256,8 @@ const { sets } = useSets();
           sets={sets}
         />
       )}
+
+      <AddCardsFAB />
     </div>
   )
 }
