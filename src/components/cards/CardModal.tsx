@@ -120,7 +120,8 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose, sets = [] }: C
       onClick={onClose}
     >
       <div
-        className="relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl w-full max-w-sm p-3 flex flex-col gap-2 my-auto touch-action-none"
+        key={animKey}
+        className={`relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl w-full max-w-sm p-3 flex flex-col gap-2 my-auto touch-action-none ${slideClass}`}
         onClick={e => e.stopPropagation()}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -166,7 +167,7 @@ const CardModal = ({ cards, currentIndex, onIndexChange, onClose, sets = [] }: C
         </button>
 
         {/* 1. NAME */}
-        <div key={animKey} className={`flex flex-col gap-2 ${slideClass}`}>
+        <div className="flex flex-col gap-2">
           <div className="relative z-10 px-8 text-center">
             <p className="font-bold text-[#f0f0f0] text-xl leading-tight" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
               {isTradex

@@ -17,6 +17,173 @@ import AddCardsFAB from '../components/ui/AddCardsFAB'
 const PREVIEW_CARDS = 8;
 const CARDS_PER_PAGE = 12;
 
+interface ManageCardProps {
+  card: TradexCard;
+  type: 'sell' | 'want';
+  editingId: string | null;
+  editValues: { price: string; quantity: string; condition: string; language: string; type: 'sell' | 'want'; variant: string };
+  onOpenModal: (card: TradexCard, type: 'sell' | 'want') => void;
+  onEditStart: (card: TradexCard) => void;
+  onEditCancel: () => void;
+  onEditSave: (card: TradexCard) => void;
+  onEditChange: (values: Partial<ManageCardProps['editValues']>) => void;
+  onRemove: (id: string, type: 'sell' | 'want') => void;
+}
+
+const ManageCard = ({
+  card, type, editingId, editValues,
+  onOpenModal, onEditStart, onEditCancel, onEditSave, onEditChange, onRemove,
+}: ManageCardProps) => (
+  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 flex flex-col gap-3">
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => onOpenModal(card, type)}
+        className="shrink-0 w-12 rounded overflow-hidden cursor-pointer opacity-90 hover:opacity-100 transition-opacity"
+        title="Ver detalhes"
+      >
+        <img
+          src={card.image_url ?? '/back-card-art.webp'}
+          alt={card.name_pt ?? card.name}
+          className="w-full h-auto object-cover"
+        />
+      </button>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-[#f0f0f0] truncate">{card.name_pt ?? card.name}</p>
+        <p className="text-xs text-[#888]">
+          #{card.tcg_card_id.split('-').pop()} · {card.set_name}
+        </p>
+        <div className="flex items-center gap-3 mt-1">
+          {card.price != null
+            ? <p className="text-xs font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
+            : <p className="text-xs text-[#555]">A negociar</p>
+          }
+          <p className="text-xs text-[#888]">x{card.quantity}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={() => editingId === card.id ? onEditCancel() : onEditStart(card)}
+          className={`transition-colors cursor-pointer ${editingId === card.id ? 'text-[#f4d03f]' : 'text-[#555] hover:text-[#f0f0f0]'}`}
+          title="Editar"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </button>
+        <button
+          onClick={() => onRemove(card.id, type)}
+          className="text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer"
+          title="Remover"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {editingId === card.id && (
+      <div className="flex flex-wrap gap-3 pt-2 border-t border-[#2a2a2a]">
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-[#555] uppercase tracking-wider">Preço</label>
+          <input
+            type="number" placeholder="R$" value={editValues.price}
+            onChange={e => onEditChange({ price: e.target.value })}
+            min="0" step="0.01"
+            className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-[#555] uppercase tracking-wider">Qtd</label>
+          <input
+            type="number" placeholder="Qtd" value={editValues.quantity}
+            onChange={e => onEditChange({ quantity: e.target.value })}
+            min="1"
+            className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-[#555] uppercase tracking-wider">Condição</label>
+          <select
+            value={editValues.condition}
+            onChange={e => onEditChange({ condition: e.target.value })}
+            className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+          >
+            {type === 'want' && <option value="ANY">?</option>}
+            <option value="M">M</option>
+            <option value="NM">NM</option>
+            <option value="LP">LP</option>
+            <option value="MP">MP</option>
+            <option value="HP">HP</option>
+            <option value="DMG">DMG</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-[#555] uppercase tracking-wider">Língua</label>
+          <select
+            value={editValues.language}
+            onChange={e => onEditChange({ language: e.target.value })}
+            className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+          >
+            <option value="BR">BR</option>
+            <option value="EN">EN</option>
+            <option value="JP">JP</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-[#555] uppercase tracking-wider">Tipo</label>
+          <select
+            value={editValues.type}
+            onChange={e => onEditChange({ type: e.target.value as 'sell' | 'want' })}
+            className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+          >
+            <option value="sell">Vendo</option>
+            <option value="want">Procuro</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] text-[#555] uppercase tracking-wider">Variante</label>
+          <select
+            value={editValues.variant}
+            onChange={e => onEditChange({ variant: e.target.value })}
+            className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer"
+          >
+            <option value="normal">Normal</option>
+            <option value="holo">Holo</option>
+            <option value="reverse">Reverse</option>
+            <option value="promo">Promo</option>
+            <option value="pre_release">Pré-release</option>
+            <option value="energy_pattern">Energy Pattern</option>
+            <option value="pokeball">Poké Ball</option>
+            <option value="masterball">Master Ball</option>
+            <option value="cosmos">Cosmos</option>
+          </select>
+        </div>
+        <div className="flex flex-col justify-end gap-1">
+          <div className="flex gap-2">
+            <button
+              onClick={() => onEditSave(card)}
+              className="px-3 py-1 bg-[#e3350d] hover:bg-[#c42d0b] text-white text-xs font-semibold rounded cursor-pointer"
+            >
+              Salvar
+            </button>
+            <button
+              onClick={onEditCancel}
+              className="px-3 py-1 text-xs text-[#888] hover:text-[#f0f0f0] cursor-pointer"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
 const Dashboard = () => {
   const { user } = useAuth();
   const { sets } = useSets();
@@ -160,7 +327,6 @@ const Dashboard = () => {
     }
   }, [user, activeTab, wantPage]);
 
-  // Busca no Supabase quando há texto na busca
   useEffect(() => {
     if (activeTab !== 'manage' || !user || !isSearching) return;
     const search = manageSearch.toLowerCase();
@@ -178,7 +344,6 @@ const Dashboard = () => {
       .then(({ data }) => setWanting(data ?? []));
   }, [manageSearch, activeTab, user]);
 
-  // Quando busca é limpa, recarrega a página atual
   useEffect(() => {
     if (activeTab !== 'manage' || !user || isSearching) return;
     loadSelling();
@@ -275,114 +440,6 @@ const Dashboard = () => {
 
     setEditingId(null);
   }
-
-  const ManageCard = ({ card, type }: { card: TradexCard; type: 'sell' | 'want' }) => (
-    <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        {/* DETAILS */}
-        <button
-          onClick={() => openModal(card, type)}
-          className="shrink-0 w-12 rounded overflow-hidden cursor-pointer opacity-90 hover:opacity-100 transition-opacity"
-          title="Ver detalhes"
-        >
-          <img
-            src={card.image_url ?? '/back-card-art.webp'}
-            alt={card.name_pt ?? card.name}
-            className="w-full h-auto object-cover"
-          />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[#f0f0f0] truncate">{card.name_pt ?? card.name}</p>
-          <p className="text-xs text-[#888]">
-            #{card.tcg_card_id.split('-').pop()} · {card.set_name}
-          </p>
-          <div className="flex items-center gap-3 mt-1">
-            {card.price != null
-              ? <p className="text-xs font-bold text-[#f4d03f]">R$ {card.price.toFixed(2)}</p>
-              : <p className="text-xs text-[#555]">A negociar</p>
-            }
-            <p className="text-xs text-[#888]">x{card.quantity}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => editingId === card.id ? handleEditCancel() : handleEditStart(card)} className={`transition-colors cursor-pointer ${editingId === card.id ? 'text-[#f4d03f]' : 'text-[#555] hover:text-[#f0f0f0]'}`} title="Editar">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </button>
-          <button onClick={() => handleRemoveConfirmed(card.id, type)} className="text-[#555] hover:text-[#e3350d] transition-colors cursor-pointer" title="Remover">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              <path d="M10 11v6M14 11v6"/>
-              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {editingId === card.id && (
-        <div className="flex flex-wrap gap-3 pt-2 border-t border-[#2a2a2a]">
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555] uppercase tracking-wider">Preço</label>
-            <input type="number" placeholder="R$" value={editValues.price} onChange={e => setEditValues(prev => ({ ...prev, price: e.target.value }))} min="0" step="0.01" className="w-20 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555] uppercase tracking-wider">Qtd</label>
-            <input type="number" placeholder="Qtd" value={editValues.quantity} onChange={e => setEditValues(prev => ({ ...prev, quantity: e.target.value }))} min="1" className="w-14 bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] placeholder-[#555] focus:outline-none focus:border-[#e3350d]" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555] uppercase tracking-wider">Condição</label>
-            <select value={editValues.condition} onChange={e => setEditValues(prev => ({ ...prev, condition: e.target.value }))} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-              {type === 'want' && <option value="ANY">?</option>}
-              <option value="M">M</option>
-              <option value="NM">NM</option>
-              <option value="LP">LP</option>
-              <option value="MP">MP</option>
-              <option value="HP">HP</option>
-              <option value="DMG">DMG</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555] uppercase tracking-wider">Língua</label>
-            <select value={editValues.language} onChange={e => setEditValues(prev => ({ ...prev, language: e.target.value }))} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-              <option value="BR">BR</option>
-              <option value="EN">EN</option>
-              <option value="JP">JP</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555] uppercase tracking-wider">Tipo</label>
-            <select value={editValues.type} onChange={e => setEditValues(prev => ({ ...prev, type: e.target.value as 'sell' | 'want' }))} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-              <option value="sell">Vendo</option>
-              <option value="want">Procuro</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] text-[#555] uppercase tracking-wider">Variante</label>
-            <select value={editValues.variant} onChange={e => setEditValues(prev => ({ ...prev, variant: e.target.value }))} className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-              <option value="normal">Normal</option>
-              <option value="holo">Holo</option>
-              <option value="reverse">Reverse</option>
-              <option value="promo">Promo</option>
-              <option value="pre_release">Pré-release</option>
-              <option value="energy_pattern">Energy Pattern</option>
-              <option value="pokeball">Poké Ball</option>
-              <option value="masterball">Master Ball</option>
-              <option value="cosmos">Cosmos</option>
-            </select>
-          </div>
-          <div className="flex flex-col justify-end gap-1">
-            <div className="flex gap-2">
-              <button onClick={() => handleEditSave(card)} className="px-3 py-1 bg-[#e3350d] hover:bg-[#c42d0b] text-white text-xs font-semibold rounded cursor-pointer">Salvar</button>
-              <button onClick={handleEditCancel} className="px-3 py-1 text-xs text-[#888] hover:text-[#f0f0f0] cursor-pointer">Cancelar</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-[#f0f0f0]">
@@ -508,7 +565,23 @@ const Dashboard = () => {
                           </button>
                           {isOpen && (
                             <div className="flex flex-col gap-2 p-3 bg-[#0f0f0f]">
-                              {group.cards.map(card => <ManageCard key={card.id} card={card} type="sell" />)}
+                              {group.cards.map(card => {
+                                return (
+                                  <ManageCard
+                                    key={card.id}
+                                    card={card}
+                                    type="sell" // ou "want"
+                                    editingId={editingId}
+                                    editValues={editValues}
+                                    onOpenModal={openModal}
+                                    onEditStart={handleEditStart}
+                                    onEditCancel={handleEditCancel}
+                                    onEditSave={handleEditSave}
+                                    onEditChange={values => setEditValues(prev => ({ ...prev, ...values }))}
+                                    onRemove={handleRemoveConfirmed}
+                                  />
+                                )})
+                              }
                             </div>
                           )}
                         </div>
@@ -519,7 +592,23 @@ const Dashboard = () => {
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
-                    {selling.map(card => <ManageCard key={card.id} card={card} type="sell" />)}
+                    {selling.map(card => {
+                      return (
+                        <ManageCard
+                          key={card.id}
+                          card={card}
+                          type="sell"
+                          editingId={editingId}
+                          editValues={editValues}
+                          onOpenModal={openModal}
+                          onEditStart={handleEditStart}
+                          onEditCancel={handleEditCancel}
+                          onEditSave={handleEditSave}
+                          onEditChange={values => setEditValues(prev => ({ ...prev, ...values }))}
+                          onRemove={handleRemoveConfirmed}
+                        />
+                      )})
+                    }
                   </div>
                   {!isSearching && <Pagination current={sellPage} total={sellTotalPages} onChange={setSellPage} />}
                 </>
@@ -564,7 +653,23 @@ const Dashboard = () => {
                           </button>
                           {isOpen && (
                             <div className="flex flex-col gap-2 p-3 bg-[#0f0f0f]">
-                              {group.cards.map(card => <ManageCard key={card.id} card={card} type="want" />)}
+                              {group.cards.map(card => {
+                                return (
+                                  <ManageCard
+                                    key={card.id}
+                                    card={card}
+                                    type="want"
+                                    editingId={editingId}
+                                    editValues={editValues}
+                                    onOpenModal={openModal}
+                                    onEditStart={handleEditStart}
+                                    onEditCancel={handleEditCancel}
+                                    onEditSave={handleEditSave}
+                                    onEditChange={values => setEditValues(prev => ({ ...prev, ...values }))}
+                                    onRemove={handleRemoveConfirmed}
+                                  />
+                                )})
+                              }
                             </div>
                           )}
                         </div>
@@ -575,7 +680,23 @@ const Dashboard = () => {
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
-                    {wanting.map(card => <ManageCard key={card.id} card={card} type="want" />)}
+                    {wanting.map(card => {
+                      return (
+                        <ManageCard
+                          key={card.id}
+                          card={card}
+                          type="want"
+                          editingId={editingId}
+                          editValues={editValues}
+                          onOpenModal={openModal}
+                          onEditStart={handleEditStart}
+                          onEditCancel={handleEditCancel}
+                          onEditSave={handleEditSave}
+                          onEditChange={values => setEditValues(prev => ({ ...prev, ...values }))}
+                          onRemove={handleRemoveConfirmed}
+                        />
+                      )})
+                    }
                   </div>
                   {!isSearching && <Pagination current={wantPage} total={wantTotalPages} onChange={setWantPage} />}
                 </>
