@@ -202,6 +202,7 @@ const Dashboard = () => {
   const [modalList, setModalList] = useState<'sell' | 'want' | null>(null);
   const [manageView, setManageView] = useState<'list' | 'bySet'>('bySet');
   const [openSets, setOpenSets] = useState<Record<string, boolean>>({});
+  const [modalCards, setModalCards] = useState<TradexCard[]>([]);
 
   const { groups: sellGroups, loading: loadingSellGroups } = useShowcaseCards(
     manageView === 'bySet' ? (user?.id ?? null) : null,
@@ -225,12 +226,13 @@ const Dashboard = () => {
 
   const isSearching = manageSearch.trim().length > 0;
 
-  const openModal = (card: TradexCard, list: 'sell' | 'want') => {
-    const cards = list === 'sell' ? selling : wanting;
+  const openModal = (card: TradexCard, list: 'sell' | 'want', sourceCards?: TradexCard[]) => {
+    const cards = sourceCards ?? (list === 'sell' ? selling : wanting);
     const index = cards.findIndex(c => c.id === card.id);
+    setModalCards(cards);
     setModalList(list);
     setModalIndex(index);
-  }
+  };
 
   const closeDialog = () => setConfirmDialog(prev => ({ ...prev, open: false }));
 
@@ -573,7 +575,7 @@ const Dashboard = () => {
                                     type="sell" // ou "want"
                                     editingId={editingId}
                                     editValues={editValues}
-                                    onOpenModal={openModal}
+                                    onOpenModal={(c, t) => openModal(c, t, group.cards)}
                                     onEditStart={handleEditStart}
                                     onEditCancel={handleEditCancel}
                                     onEditSave={handleEditSave}
@@ -661,7 +663,7 @@ const Dashboard = () => {
                                     type="want"
                                     editingId={editingId}
                                     editValues={editValues}
-                                    onOpenModal={openModal}
+                                    onOpenModal={(c, t) => openModal(c, t, group.cards)}
                                     onEditStart={handleEditStart}
                                     onEditCancel={handleEditCancel}
                                     onEditSave={handleEditSave}
@@ -708,7 +710,7 @@ const Dashboard = () => {
 
       {modalList !== null && (
         <CardModal
-          cards={modalList === 'sell' ? selling : wanting}
+          cards={modalCards}
           currentIndex={modalIndex}
           onIndexChange={setModalIndex}
           onClose={() => setModalList(null)}
