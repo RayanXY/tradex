@@ -203,14 +203,18 @@ const Dashboard = () => {
   const [manageView, setManageView] = useState<'list' | 'bySet'>('bySet');
   const [openSets, setOpenSets] = useState<Record<string, boolean>>({});
   const [modalCards, setModalCards] = useState<TradexCard[]>([]);
+  const [groupsRefreshKey, setGroupsRefreshKey] = useState(0);
+  const [initializedSets, setInitializedSets] = useState(false);
 
   const { groups: sellGroups, loading: loadingSellGroups } = useShowcaseCards(
     manageView === 'bySet' ? (user?.id ?? null) : null,
-    'sell'
+    'sell',
+    groupsRefreshKey
   );
   const { groups: wantGroups, loading: loadingWantGroups } = useShowcaseCards(
     manageView === 'bySet' ? (user?.id ?? null) : null,
-    'want'
+    'want',
+    groupsRefreshKey
   );
 
   const [editValues, setEditValues] = useState<{ price: string; quantity: string; condition: string; language: string; type: 'sell' | 'want'; variant: string }>({
@@ -353,12 +357,18 @@ const Dashboard = () => {
   }, [isSearching]);
 
   useEffect(() => {
+    if (initializedSets) return;
     if (sellGroups.length === 0 && wantGroups.length === 0) return;
     const initial: Record<string, boolean> = {};
     if (sellGroups[0]) initial[`sell-${sellGroups[0].setId}`] = true;
     if (wantGroups[0]) initial[`want-${wantGroups[0].setId}`] = true;
     setOpenSets(initial);
-  }, [sellGroups, wantGroups]);
+    setInitializedSets(true);
+  }, [sellGroups, wantGroups, initializedSets]);
+
+  useEffect(() => {
+    setInitializedSets(false);
+  }, [manageView]);
 
   useEffect(() => { loadCounts(); }, [loadCounts]);
   useEffect(() => { loadSelling(); }, [loadSelling]);
@@ -420,7 +430,6 @@ const Dashboard = () => {
     const typeChanged = editValues.type !== card.type;
 
     if (typeChanged) {
-      // Remove da lista original e insere na lista destino
       if (card.type === 'sell') {
         setSelling(prev => prev.filter(c => c.id !== card.id));
         setSellTotal(prev => prev - 1);
@@ -440,6 +449,7 @@ const Dashboard = () => {
       }
     }
 
+    setGroupsRefreshKey(k => k + 1);
     setEditingId(null);
   }
 
@@ -543,7 +553,7 @@ const Dashboard = () => {
               ) : selling.length === 0 ? (
                 <p className="text-sm text-[#555]">{isSearching ? 'Nenhuma carta encontrada.' : 'Nenhuma carta adicionada ainda.'}</p>
               ) : manageView === 'bySet' ? (
-                loadingSellGroups ? (
+                loadingSellGroups && sellGroups.length === 0 ? (
                   <p className="text-sm text-[#555]">Carregando...</p>
                 ) : sellGroups.length === 0 ? (
                   <p className="text-sm text-[#555]">Nenhuma carta adicionada ainda.</p>
@@ -631,7 +641,7 @@ const Dashboard = () => {
               ) : wanting.length === 0 ? (
                 <p className="text-sm text-[#555]">{isSearching ? 'Nenhuma carta encontrada.' : 'Nenhuma carta na lista ainda.'}</p>
               ) : manageView === 'bySet' ? (
-                loadingWantGroups ? (
+                loadingWantGroups && wantGroups.length === 0 ? (
                   <p className="text-sm text-[#555]">Carregando...</p>
                 ) : wantGroups.length === 0 ? (
                   <p className="text-sm text-[#555]">Nenhuma carta na lista ainda.</p>

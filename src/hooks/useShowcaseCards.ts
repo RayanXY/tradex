@@ -25,7 +25,8 @@ const extractSetId = (tcgCardId: string) => {
 
 export const useShowcaseCards = (
   userId: string | null,
-  type: 'sell' | 'want'
+  type: 'sell' | 'want',
+  refreshKey?: number
 ): UseShowcaseCardsResult => {
   const [loading, setLoading] = useState(true);
   const [cards, setCards] = useState<TradexCard[]>([]);
@@ -35,7 +36,7 @@ export const useShowcaseCards = (
     if (!userId) return;
 
     const load = async () => {
-      setLoading(true);
+      if (cards.length === 0) setLoading(true);
 
       const { data: cardsData } = await supabase
         .from('cards')
@@ -86,7 +87,7 @@ export const useShowcaseCards = (
     };
 
     load();
-  }, [userId, type]);
+  }, [userId, type, refreshKey]);
 
   return { cards, groups, loading };
 }
