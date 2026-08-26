@@ -23,7 +23,7 @@ const Wishlist = () => {
   const [gradeSearch, setGradeSearch] = useState('');
   const [loadingSeller, setLoadingSeller] = useState(true);
   const [seller, setSeller] = useState<Seller | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('allCards');
+  const [viewMode, setViewMode] = useState<ViewMode>('bySets');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [openSets, setOpenSets] = useState<Set<string>>(new Set());
 
