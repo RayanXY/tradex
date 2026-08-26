@@ -12,6 +12,7 @@ import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
 import { VARIANT_OPTIONS } from '../constants/variants';
 import SetLogo from '../components/ui/SetLogo'
 import { SETS_EN_IMAGES } from '../constants/cards'
+import { tcgdexFetch } from '../lib/tcgdex'
 
 interface QueuedCard {
   uid: string,
@@ -167,6 +168,7 @@ const Search = () => {
     setDrawerOpen(false);
     clear();
     setPage(1);
+    setSetResults([]);
     setSelectedSet(sets.find(s => s.id === setId) ?? null);
     setSortBy(prev => prev === 'recent' ? 'number' : prev);
     setSetFilter('');
@@ -174,8 +176,8 @@ const Search = () => {
     const setInfo = sets.find(s => s.id === setId);
 
     const [ptRes, enRes] = await Promise.all([
-      fetch(`https://api.tcgdex.net/v2/pt/cards?set.id=${setId}&pagination:itemsPerPage=300`),
-      fetch(`https://api.tcgdex.net/v2/en/cards?set.id=${setId}&pagination:itemsPerPage=300`),
+      tcgdexFetch(`v2/pt/cards?set.id=${setId}&pagination:itemsPerPage=300`),
+      tcgdexFetch(`v2/en/cards?set.id=${setId}&pagination:itemsPerPage=300`),
     ]);
 
     const [ptData, enData] = await Promise.all([
@@ -250,7 +252,7 @@ const Search = () => {
     }]);
 
     try {
-      const res = await fetch(`https://api.tcgdex.net/v2/en/cards/${card.id}`);
+      const res = await tcgdexFetch(`v2/en/cards/${card.id}`);
       if (res.ok) {
         const data = await res.json();
         setQueue(prev => prev.map(q =>

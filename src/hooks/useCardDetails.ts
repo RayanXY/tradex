@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { tcgdexFetch } from '../lib/tcgdex'
 
 export interface CardDetails {
   rarity?: string,
@@ -37,9 +38,6 @@ export interface CardDetails {
   },
 }
 
-const BASE_EN = "https://api.tcgdex.net/v2/en";
-const BASE_PT = "https://api.tcgdex.net/v2/pt";
-
 const useCardDetails = (tcgCardId: string | null) => {
   const [details, setDetails] = useState<CardDetails | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,8 +53,8 @@ const useCardDetails = (tcgCardId: string | null) => {
     setDetails(null);
 
     Promise.all([
-      fetch(`${BASE_EN}/cards/${tcgCardId}`).then(res => res.ok ? res.json() : null).catch(() => null),
-      fetch(`${BASE_PT}/cards/${tcgCardId}`).then(res => res.ok ? res.json() : null).catch(() => null),
+      tcgdexFetch(`v2/en/cards/${tcgCardId}`).then(res => res.ok ? res.json() : null).catch(() => null),
+      tcgdexFetch(`v2/pt/cards/${tcgCardId}`).then(res => res.ok ? res.json() : null).catch(() => null),
     ]).then(([en, pt]) => {
       if (cancelled) return;
       if (!en) { setDetails(null); setLoading(false); return; }

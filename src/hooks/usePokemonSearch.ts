@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { supabase } from "../lib/supabase"
+import { tcgdexFetch } from '../lib/tcgdex';
 
 export interface PokemonCard {
   id: string,
@@ -13,9 +14,6 @@ export interface PokemonCard {
   localId: string,
   image: string
 }
-
-const BASE_EN = "https://api.tcgdex.net/v2/en";
-const BASE_PT = "https://api.tcgdex.net/v2/pt";
 
 let validSetIds: Set<string> | null = null;
 
@@ -70,8 +68,8 @@ const usePokemonSearch = () => {
         const withoutZeros = `${setId}-${parseInt(localId)}`;
 
         const [res1, res2] = await Promise.all([
-          fetch(`${BASE_EN}/cards/${withZeros}`),
-          fetch(`${BASE_EN}/cards/${withoutZeros}`),
+          tcgdexFetch(`v2/en/cards/${withZeros}`),
+          tcgdexFetch(`v2/en/cards/${withoutZeros}`),
         ]);
 
         const fetched = await Promise.all([
@@ -86,7 +84,7 @@ const usePokemonSearch = () => {
             // Tenta buscar nome PT para carta específica
             let name_pt: string | null = null;
             try {
-              const ptRes = await fetch(`${BASE_PT}/cards/${card.id}`);
+              const ptRes = await tcgdexFetch(`v2/pt/cards/${card.id}`);
               if (ptRes.ok) {
                 const ptData = await ptRes.json();
                 name_pt = ptData.name ?? null;
@@ -110,13 +108,13 @@ const usePokemonSearch = () => {
 
         cards = cards.filter(c => c.image);
       } else {
-        const fetchAllPages = async (base: string) => {
+        const fetchAllPages = async (lang: 'en' | 'pt') => {
           let allCards: any[] = [];
           let currentPage = 1;
           let keepFetching = true;
           while (keepFetching) {
-            const res = await fetch(
-              `${base}/cards?name=${encodeURIComponent(trimmed)}&pagination:itemsPerPage=50&pagination:page=${currentPage}`
+            const res = await tcgdexFetch(
+              `v2/${lang}/cards?name=${encodeURIComponent(trimmed)}&pagination:itemsPerPage=50&pagination:page=${currentPage}`
             );
             const data = await res.json();
             const raw = Array.isArray(data) ? data : [];
@@ -128,8 +126,8 @@ const usePokemonSearch = () => {
         };
 
         const [ptRaw, enRaw] = await Promise.all([
-          fetchAllPages(BASE_PT),
-          fetchAllPages(BASE_EN),
+          fetchAllPages('pt'),
+          fetchAllPages('en'),
         ]);
 
         const ptMap = new Map<string, any>();
