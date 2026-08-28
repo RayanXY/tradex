@@ -1,15 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import type { SubmitEvent } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
+  }, [user, navigate]);
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
@@ -19,9 +23,6 @@ const Login = () => {
     if (err) {
       setError(err);
       setLoading(false);
-    } else {
-      const stored = JSON.parse(localStorage.getItem('tradex_user') ?? '{}');
-      navigate(stored.role === 'admin' ? '/admin' : '/dashboard');
     }
   }
 

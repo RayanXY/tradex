@@ -10,9 +10,10 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     </div>
   );
 
-  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== 'admin') return <Navigate to="/dashboard" replace />;
 
-  return <>{children}</>;
-};
+  return <>{children}</>
+}
 
 export default AdminRoute

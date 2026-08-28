@@ -10,11 +10,11 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
     setMenuOpen(false);
-  };
+  }
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -25,7 +25,7 @@ const Navbar = () => {
     setMenuOpen(false);
     navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     setSearchQuery('');
-  };
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -183,6 +183,6 @@ const Navbar = () => {
       )}
     </header>
   );
-};
+}
 
 export default Navbar
