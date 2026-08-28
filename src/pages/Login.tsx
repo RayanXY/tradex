@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import type { SubmitEvent } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { formatPhone } from '../lib/phone'
 
 const Login = () => {
   const { login, user } = useAuth();
@@ -15,11 +16,19 @@ const Login = () => {
     if (user) navigate(user.role === 'admin' ? '/admin' : '/dashboard', { replace: true });
   }, [user, navigate]);
 
+  const handleIdentifierChange = (value: string) => {
+    const looksLikePhone = /^[\d()\-\s]*$/.test(value);
+    setIdentifier(looksLikePhone ? formatPhone(value) : value);
+  };
+
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const err = await login(identifier, password)
+    const err = await login(
+      /^[\d()\-\s]*$/.test(identifier) ? identifier.replace(/\D/g, '') : identifier,
+      password
+    );
     if (err) {
       setError(err);
       setLoading(false);
@@ -45,9 +54,9 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input
               type="text"
-              placeholder="Email, apelino ou telefone"
+              placeholder="Email, apelido ou telefone"
               value={identifier}
-              onChange={e => setIdentifier(e.target.value)}
+              onChange={e => handleIdentifierChange(e.target.value)}
               required
               className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
             />

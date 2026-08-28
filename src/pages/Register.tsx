@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import type { SubmitEvent } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { formatPhone, stripPhone } from '../lib/phone'
 
 const Register = () => {
-  const { register, login } = useAuth();
-  const navigate = useNavigate();
+  const { register } = useAuth();
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [email, setEmail] = useState('');
@@ -13,18 +13,18 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const err = await register(name, slug, email, phone, password);
+    const err = await register(name, slug, email, stripPhone(phone), password);
+    setLoading(false);
     if (err) {
       setError(err);
-      setLoading(false);
     } else {
-      await login(email, password);
-      navigate('/dashboard');
+      setSuccess(true);
     }
   }
 
@@ -44,61 +44,68 @@ const Register = () => {
 
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-8">
           <h1 className="text-lg font-semibold text-[#f0f0f0] mb-6">Criar conta</h1>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <input
-              type="text"
-              placeholder="Nome"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-              className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
-            />
-            <div>
+
+          {success ? (
+            <p className="text-[#f0f0f0] text-sm text-center leading-relaxed">
+              Cadastro realizado! Confira seu email para confirmar a conta antes de entrar.
+            </p>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <input
                 type="text"
-                placeholder="Apelido (ex: ash1996)"
-                value={slug}
-                onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
+                placeholder="Nome"
+                value={name}
+                onChange={e => setName(e.target.value)}
                 required
-                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+                className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
               />
-              {slug && (
-                <p className="text-xs text-[#555] mt-1">tradex.vercel.app/u/{slug}</p>
-              )}
-            </div>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
-            />
-            <input
-              type="text"
-              placeholder="Telefone (com DDD)"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              required
-              className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
-            />
-            <input
-              type="password"
-              placeholder="Senha"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
-            />
-            {error && <p className="text-[#e3350d] text-sm">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-3 text-sm transition-colors mt-2"
-            >
-              {loading ? 'Cadastrando...' : 'Cadastrar'}
-            </button>
-          </form>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Apelido (ex: ash1996)"
+                  value={slug}
+                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
+                  required
+                  className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+                />
+                {slug && (
+                  <p className="text-xs text-[#555] mt-1">tradex.vercel.app/u/{slug}</p>
+                )}
+              </div>
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+              />
+              <input
+                type="text"
+                placeholder="Telefone (com DDD)"
+                value={phone}
+                onChange={e => setPhone(formatPhone(e.target.value))}
+                required
+                className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+              />
+              <input
+                type="password"
+                placeholder="Senha"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-4 py-3 text-[#f0f0f0] placeholder-[#555] text-sm focus:outline-none focus:border-[#e3350d] transition-colors"
+              />
+              {error && <p className="text-[#e3350d] text-sm">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-[#e3350d] hover:bg-[#c42d0b] disabled:opacity-50 text-white font-semibold rounded-lg px-4 py-3 text-sm transition-colors mt-2"
+              >
+                {loading ? 'Cadastrando...' : 'Cadastrar'}
+              </button>
+            </form>
+          )}
         </div>
 
         <p className="text-center text-sm text-[#888] mt-6">
