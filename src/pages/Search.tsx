@@ -562,7 +562,7 @@ const Search = () => {
         )}
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 md:flex md:gap-6">
+      <div className={`max-w-6xl mx-auto px-4 py-6 md:flex md:gap-6 ${queue.length > 0 ? 'pb-24' : ''}`}>
         <aside className="hidden md:block w-56 shrink-0">
           <h2 className="text-xs font-semibold text-[#888] uppercase tracking-wider mb-3">Sets</h2>
           <SidebarContent
