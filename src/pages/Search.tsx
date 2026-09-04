@@ -9,10 +9,24 @@ import CardImage from '../components/cards/CardImage'
 import type { SetItem, TradexCard } from '../types'
 import useSets from '../hooks/useSets'
 import usePokemonSearch, { type PokemonCard } from '../hooks/usePokemonSearch'
-import { VARIANT_OPTIONS } from '../constants/variants';
+import { VARIANT_OPTIONS, type CardVariant } from '../constants/variants'
+import { resolveAllowedVariants } from '../lib/variants'
 import SetLogo from '../components/ui/SetLogo'
 import { SETS_EN_IMAGES } from '../constants/cards'
 import { tcgdexFetch } from '../lib/tcgdex'
+
+const FOIL_MAP: Record<string, CardVariant> = {
+  pokeball: 'pokeball',
+  masterball: 'masterball',
+  cosmos: 'cosmos',
+  energy: 'energy_pattern'
+}
+
+const TYPE_MAP: Record<string, CardVariant> = {
+  normal: 'normal',
+  holo: 'holo',
+  reverse: 'reverse',
+}
 
 interface QueuedCard {
   uid: string,
@@ -24,7 +38,8 @@ interface QueuedCard {
   language: string,
   rarity: string | null,
   variant: string,
-  types: string[] | null
+  types: string[] | null,
+  allowedVariants: CardVariant[] | null
 }
 
 type InventoryCard = Pick<TradexCard, 'id' | 'tcg_card_id' | 'type'>;
@@ -248,20 +263,27 @@ const Search = () => {
       language: 'BR',
       rarity: null,
       variant: 'normal',
-      types: null
+      types: null,
+      allowedVariants: null
     }]);
 
     try {
       const res = await tcgdexFetch(`v2/en/cards/${card.id}`);
       if (res.ok) {
         const data = await res.json();
+        const allowedVariants = resolveAllowedVariants(data);
+        console.log("CARD", data)
         setQueue(prev => prev.map(q =>
-          q.uid === uid ? { ...q, rarity: data.rarity ?? null, types: data.types ?? null } : q
+          q.uid === uid ? {
+            ...q,
+            rarity: data.rarity ?? null,
+            types: data.types ?? null,
+            allowedVariants,
+            variant: allowedVariants?.includes(q.variant as CardVariant) ? q.variant : (allowedVariants?.[0] ?? q.variant)
+          } : q
         ));
       }
-    } catch {
-      //
-    }
+    } catch { /* */ }
   }
 
   const handleQueueUpdate = (uid: string, field: 'price' | 'quantity' | 'type' | 'condition' | 'language' | 'variant', value: string) => {
@@ -485,7 +507,7 @@ const Search = () => {
           {queue.length === 0 ? (
             <p className="text-sm text-[#555]">Nenhuma carta selecionada.</p>
           ) : (
-            queue.map(({ uid, card, price, quantity, type, condition, language, variant }) => (
+            queue.map(({ uid, card, price, quantity, type, condition, language, variant, allowedVariants }) => (
               <div key={uid} className="flex flex-col gap-2.5 border-b border-[#2a2a2a] pb-4 last:border-0 last:pb-0">
                 <div className="flex items-center justify-between">
                   <div>
@@ -505,7 +527,7 @@ const Search = () => {
                     <button onClick={() => handleQueueUpdate(uid, 'type', 'sell')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'sell' ? 'bg-[#e3350d] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Vendo</button>
                     <button onClick={() => handleQueueUpdate(uid, 'type', 'want')} className={`py-1 rounded text-xs font-semibold cursor-pointer ${type === 'want' ? 'bg-[#3b82f6] text-white' : 'bg-[#0f0f0f] border border-[#2a2a2a] text-[#888]'}`}>Procuro</button>
                     <select value={variant} onChange={e => handleQueueUpdate(uid, 'variant', e.target.value)} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#e3350d] cursor-pointer">
-                      {VARIANT_OPTIONS.map(v => (
+                      {(allowedVariants ? VARIANT_OPTIONS.filter(v => allowedVariants.includes(v.value)) : VARIANT_OPTIONS).map(v => (
                         <option key={v.value} value={v.value}>{v.label}</option>
                       ))}
                     </select>

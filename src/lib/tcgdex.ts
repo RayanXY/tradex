@@ -1,4 +1,5 @@
 const RACE_GROUP = [
+  'https://api.tcgdex.net',
   'https://api.na1.tcgdex.net',
   'https://api.eu1.tcgdex.net',
   
@@ -11,15 +12,12 @@ const FALLBACK_GROUP = [
 
 const TIMEOUT_MS = 4000;
 
-const fetchWithTimeout = (base: string, path: string) =>
-  fetch(`${base}/${path}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+const fetchWithTimeout = (base: string, path: string) => fetch(`${base}/${path}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
 
 export async function tcgdexFetch(path: string): Promise<Response> {
   try {
     return await Promise.any(RACE_GROUP.map(base => fetchWithTimeout(base, path)));
-  } catch {
-    // grupo inteiro falhou — tenta o fallback em sequência
-  }
+  } catch { /* */ }
 
   for (const base of FALLBACK_GROUP) {
     try {

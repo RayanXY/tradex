@@ -7,7 +7,8 @@ export type CardVariant =
   | 'pokeball'
   | 'energy_pattern'
   | 'masterball'
-  | 'cosmos';
+  |  'cosmos'
+  | 'league';
 
 export interface VariantInfo {
   label: string;
@@ -25,6 +26,7 @@ export const VARIANTS: Record<CardVariant, VariantInfo> = {
   pokeball:       { label: 'Poké Ball',      shortLabel: 'Poké Ball',      glow: '0 0 8px 2px #e3350d' },
   masterball:     { label: 'Master Ball',    shortLabel: 'Master Ball',    glow: '0 0 8px 2px #a855f7' },
   cosmos:         { label: 'Cosmos Foil',    shortLabel: 'Cosmos',         glow: '0 0 8px 2px #22d3ee' },
+  league:         { label: 'Liga',           shortLabel: 'Liga',           glow: '0 0 8px 2px #10b981' },
 }
 
 export const VARIANT_OPTIONS = Object.entries(VARIANTS).map(([value, info]) => ({
