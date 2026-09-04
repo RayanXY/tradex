@@ -15,19 +15,6 @@ import SetLogo from '../components/ui/SetLogo'
 import { SETS_EN_IMAGES } from '../constants/cards'
 import { tcgdexFetch } from '../lib/tcgdex'
 
-const FOIL_MAP: Record<string, CardVariant> = {
-  pokeball: 'pokeball',
-  masterball: 'masterball',
-  cosmos: 'cosmos',
-  energy: 'energy_pattern'
-}
-
-const TYPE_MAP: Record<string, CardVariant> = {
-  normal: 'normal',
-  holo: 'holo',
-  reverse: 'reverse',
-}
-
 interface QueuedCard {
   uid: string,
   card: PokemonCard,
@@ -272,7 +259,6 @@ const Search = () => {
       if (res.ok) {
         const data = await res.json();
         const allowedVariants = resolveAllowedVariants(data);
-        console.log("CARD", data)
         setQueue(prev => prev.map(q =>
           q.uid === uid ? {
             ...q,
